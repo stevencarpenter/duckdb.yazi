@@ -134,7 +134,7 @@ Once these are installed you can use the yazi plugin manager to install the plug
 Use the command:
 
 ```
-ya pack -a wylie102/duckdb
+ya pkg add wylie102/duckdb
 ```
 
 in your terminal

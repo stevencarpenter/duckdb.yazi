@@ -89,7 +89,8 @@ local function check_file_type(path)
 			return filetype
 		end
 	end
-	ya.err("File is not a supported file type")
+	ya.err("File is not a supported file type: " .. tostring(name))
+	return nil
 end
 
 local get_hovered_url_string = ya.sync(function()
@@ -99,6 +100,12 @@ end)
 local duckdb_opener = ya.sync(function(_, arg)
 	local hovered_url = Url(get_hovered_url_string())
 	local file_type = check_file_type(hovered_url)
+	
+	if not file_type then
+		ya.err("Cannot open with duckdb: unsupported file type")
+		return
+	end
+	
 	local command = "duckdb "
 	if file_type == "excel" then
 		command = string.format([[%s-cmd "install spatial;" -cmd "load spatial;" ]], command)
@@ -672,8 +679,12 @@ local function create_cache(job, mode, file_type, limit)
 	local base_query = generate_preload_query(job, mode, file_type, limit)
 	local query = string.format("COPY (%s) TO '%s' (FORMAT 'parquet');", base_query, target)
 	local output = run_query(job, query, nil, file_type)
-	ya.dbg("stdout: " .. tostring(output.stdout))
-	ya.dbg("stderr: " .. tostring(output.stderr))
+	if output then
+		ya.dbg("stdout: " .. tostring(output.stdout))
+		ya.dbg("stderr: " .. tostring(output.stderr))
+	else
+		ya.dbg("run_query returned nil for create_cache")
+	end
 
 	if not output or (output.stderr and output.stderr ~= "") then
 		ya.err(
@@ -732,6 +743,12 @@ function M:preload(job)
 	end
 	local limit = get_opts("limit")
 	local file_type = check_file_type(job.file.url)
+	
+	if not file_type then
+		ya.err("Unable to determine file type during preload: " .. tostring(job.file.url))
+		return true -- Return true to avoid blocking, but don't cache
+	end
+	
 	local all_done = true
 
 	if file_type == "duckdb" then
@@ -751,6 +768,10 @@ end
 -- Peek with mode toggle if scrolling at top
 function M:peek(job)
 	local args = prepare_peek_context(job)
+	if not args.file_type then
+		ya.err("Unable to determine file type for: " .. tostring(job.file.url))
+		return require("code"):peek(job)
+	end
 	if is_plain_text(job, args.file_type) then
 		return require("code"):peek(job)
 	end
@@ -758,8 +779,12 @@ function M:peek(job)
 	local query = generate_peek_query(args.target, job, args.limit, args.offset, args.file_type, args.cache_str)
 	ya.dbg("query: " .. tostring(query))
 	local output = run_query(job, query, args.target, args.file_type)
-	ya.dbg("stdout: " .. tostring(output.stdout))
-	ya.dbg("stderr: " .. tostring(output.stderr))
+	if output then
+		ya.dbg("stdout: " .. tostring(output.stdout))
+		ya.dbg("stderr: " .. tostring(output.stderr))
+	else
+		ya.dbg("run_query returned nil")
+	end
 	if not output_is_valid(output, args.mode, job) then
 		if args.target == args.cache_url and args.scrolled_collumns == 0 then
 			add_to_list("bad_cache", args.cache_str)
