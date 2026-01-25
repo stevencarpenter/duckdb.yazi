@@ -746,7 +746,9 @@ function M:preload(job)
 	
 	if not file_type then
 		ya.err("Unable to determine file type during preload: " .. tostring(job.file.url))
-		return true -- Return true to avoid blocking, but don't cache
+		-- Return true to signal successful completion to yazi, preventing it from retrying
+		-- the preload indefinitely. The file simply won't be cached.
+		return true
 	end
 	
 	local all_done = true
@@ -770,6 +772,7 @@ function M:peek(job)
 	local args = prepare_peek_context(job)
 	if not args.file_type then
 		ya.err("Unable to determine file type for: " .. tostring(job.file.url))
+		-- Fall back to yazi's default code previewer for unsupported file types
 		return require("code"):peek(job)
 	end
 	if is_plain_text(job, args.file_type) then
