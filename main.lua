@@ -54,9 +54,12 @@ local function add_queries_to_table(target_table, queries)
 end
 
 local function generate_data_source_string(target, file_type)
-	local url_string = "'" .. tostring(target) .. "'"
+	-- Escape single quotes in the path for SQL string literal
+	local url_string = "'" .. tostring(target):gsub("'", "''") .. "'"
 	if file_type == "excel" then
 		return string.format("st_read(%s)", url_string)
+	elseif file_type == "avro" then
+		return string.format("read_avro(%s)", url_string)
 	elseif file_type == "text" then
 		return string.format("read_csv(%s)", url_string)
 	else
@@ -71,6 +74,7 @@ local extension_map = {
 	json = "json",
 	parquet = "parquet",
 	xlsx = "excel",
+	avro = "avro",
 	duckdb = "duckdb",
 	db = "duckdb",
 }
@@ -96,33 +100,71 @@ local get_hovered_url_string = ya.sync(function()
 	return tostring(cx.active.current.hovered.url)
 end)
 
+local function toggle_preview_mode(target_url)
+    local mode = get_opts("mode")
+    local new_mode = (mode == "summarized") and "standard" or "summarized"
+    set_opts("mode", new_mode)
+    set_opts("mode_changed", true)
+    set_opts("scrolled_columns", 0)
+
+    local only_if = target_url
+    if not only_if then
+        local hovered = get_hovered_url_string()
+        if hovered and hovered ~= "" then
+            only_if = Url(hovered)
+        end
+    end
+
+    if only_if then
+        ya.emit("peek", { 50, only_if = only_if })
+    else
+        ya.emit("peek", { 50 })
+    end
+end
+
 local duckdb_opener = ya.sync(function(_, arg)
 	local hovered_url = Url(get_hovered_url_string())
 	local file_type = check_file_type(hovered_url)
-	local command = "duckdb "
+
+	local args = {}
+
 	if file_type == "excel" then
-		command = string.format([[%s-cmd "install spatial;" -cmd "load spatial;" ]], command)
-		ya.dbg("command: " .. tostring(command))
+		add_queries_to_table(args, { "install spatial", "load spatial" })
+		ya.dbg("duckdb_opener: loading spatial extension for excel")
+	elseif file_type == "avro" then
+		add_queries_to_table(args, { "install avro", "load avro" })
+		ya.dbg("duckdb_opener: loading avro extension")
 	end
 
 	if file_type ~= "duckdb" then
-		local table_name = '\\"' .. hovered_url.stem .. '\\"'
+		-- Use quoted identifier for table name (double quotes inside SQL)
+		local table_name = '"' .. tostring(hovered_url.stem):gsub('"', '""') .. '"'
 		local data_source_string = generate_data_source_string(hovered_url, file_type)
 		local query = string.format("CREATE TABLE %s AS FROM %s;", table_name, data_source_string)
-		command = string.format('%s-cmd "%s"', command, query)
-		ya.dbg("command final: " .. tostring(command))
+		add_queries_to_table(args, query)
+		ya.dbg("duckdb_opener query: " .. query)
 	else
-		command = command .. tostring(hovered_url)
+		table.insert(args, tostring(hovered_url))
 	end
 
 	if arg ~= "-open" then
-		command = string.format("%s -ui", command)
+		table.insert(args, "-ui")
 	end
-	ya.emit("shell", { command, block = true, orphan = true, confirm = true })
+
+	local child, err = Command("duckdb"):args(args):stdin(Command.INHERIT):stdout(Command.INHERIT):stderr(Command.INHERIT):spawn()
+	if not child then
+		ya.err("Failed to spawn DuckDB: " .. tostring(err))
+		return
+	end
+	child:wait()
 end)
 
 function M:entry(job)
 	local arg = job.args and job.args[1]
+	if arg == "-toggle" then
+		return toggle_preview_mode(nil)
+	end
+
 	if arg ~= "+1" and arg ~= "-1" then
 		return duckdb_opener(arg)
 	end
@@ -283,6 +325,8 @@ local function run_query(job, query, target, file_type)
 		table.insert(args, tostring(target))
 	elseif file_type == "excel" then
 		add_queries_to_table(args, { "install spatial", "load spatial" })
+	elseif file_type == "avro" then
+		add_queries_to_table(args, { "install avro", "load avro" })
 	end
 
 	-- Duckbox config
@@ -411,7 +455,7 @@ set variable included_columns = (
 	with column_list as (
 		select column_name, row_number() over () as row
 		from (describe select * from %s)
-	)  
+	)
 	select list(column_name)
 	from column_list
 	where row > %d and row <= (%d)
@@ -543,8 +587,8 @@ local function generate_peek_query(target, job, limit, offset, file_type, cache_
         '   %s ' as q25,
         '   %s ' as q50,
         '   %s ' as q75
-        from (describe select * from %s) d 
-        left join parquet_metadata(%s) m 
+        from (describe select * from %s) d
+        left join parquet_metadata(%s) m
         on d.column_name = m.path_in_schema
         group by all
         order by min(column_id))
@@ -727,6 +771,10 @@ end
 
 -- Preload summarized and standard preview caches
 function M:preload(job)
+	if not job or not job.file or not job.file.url then
+		return true
+	end
+
 	if is_plain_text(job, nil) then
 		return true
 	end
@@ -791,13 +839,7 @@ function M:seek(job)
 	local new_skip = current_skip + units
 
 	if new_skip < 0 then
-		-- Toggle preview mode
-		local mode = get_opts("mode")
-		local new_mode = (mode == "summarized") and "standard" or "summarized"
-		set_opts("mode", new_mode)
-		set_opts("mode_changed", true)
-		-- Trigger re-peek
-		ya.emit("peek", { OFFSET_BASE, only_if = job.file.url })
+		toggle_preview_mode(job.file.url)
 	else
 		ya.emit("peek", { new_skip + OFFSET_BASE, only_if = job.file.url })
 	end
