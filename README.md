@@ -50,7 +50,7 @@ Supported file types:
 - In the database view you can even scroll through the list of column names.
 - Output highlighting should now work across any os (where duckdb supports it).
 
-> Requires a small amount of extra configuration from previous versions. These are keymaps (I use `H` and `L`) and some other aditional customisation options.
+> Requires a small amount of extra configuration from previous versions. These are keymaps (I use `H` and `L`) and some other additional customisation options.
 >
 >See the [Installation](https://github.com/wylie102/duckdb.yazi/tree/main?tab=readme-ov-file#installation)
 > and [Configuration](https://github.com/wylie102/duckdb.yazi/tree/main?tab=readme-ov-file#configurationcustomisation) sections.
@@ -174,6 +174,7 @@ prepend_preloaders = [
     { url = "*.tsv", run = "duckdb", multi = false },
     { url = "*.json", run = "duckdb", multi = false },
     { url = "*.parquet", run = "duckdb", multi = false },
+    { url = "*.avro", run = "duckdb", multi = false },
     { url = "*.txt", run = "duckdb", multi = false },
     { url = "*.xlsx", run = "duckdb", multi = false }
 ]
@@ -238,7 +239,7 @@ desc = "open with duckdb ui"
 >
 >- `H` - previous directory and
 >- `L` - next directory
-   > (different from standard `h` and `l` for patent and child directory).
+   > (different from standard `h` and `l` for parent and child directory).
 >
 >So if you use those, you might want to choose something else or remap those to <C-h> and <C-l> instead.
 
@@ -289,8 +290,6 @@ But the setup call `require("duckdb"):setup()` is still required for the plugin 
 - mode – the view that will be the default on startup. The default is summarized, but this can sometimes be slow if running while the files are also being
   cached. Most of the time it will be the same speed as standard, so pick the one you like.
 
-- cache_size – the number of rows cached in the standard mode. Make the number higher if you want to be able to scroll further down in your files. Be aware of this
-  cached. Most of the time it will be the same speed as standard, so pick the one you like.
 
 - cache_size – the number of rows cached in the standard mode. Make the number higher if you want to be able to scroll further down in your files. Be aware this
   could impact cache size and cache performance if it was made too large. If you change this setting you will need to run `yazi --clear-cache` for it to take
@@ -300,15 +299,15 @@ But the setup call `require("duckdb"):setup()` is still required for the plugin 
   column.
 
 - minmax_column_width - is the number of characters displayed in the min and max columns in summarized view. Default is 21, which is roughly enough to see date
-  and time in a datetime column. If you need more, set it higher, if you want mim/max to take up less space, set it lower.
+  and time in a datetime column. If you need more, set it higher, if you want min/max to take up less space, set it lower.
 
 - column_fit_factor – this one is actually important but might feel a bit counter-intuitive, so have a look below.
     - TLDR: duckdb.yazi is designed to overspill the screen on the right side. Unless all your columns are incredibly narrow/you can see the right border of
-      your table when there are still more columns to scroll OR you work with tables with a huge number of columns and scrolling them feels slightly show,
+      your table when there are still more columns to scroll OR you work with tables with a huge number of columns and scrolling them feels slightly slow,
       you can probably leave it alone.
     - Slightly longer instructions: To fully optimize this, 1. Lower it until your columns no longer spill off the end of the screen (check this on a few files)
       Step 2 – Increase by 1 so that columns again spill over the right border.
-    - More detailed explanation: Implementing column scrolling also gave us a mechanism to user-attachments only the columns we need to fill (in reality
+    - More detailed explanation: Implementing column scrolling also gave us a mechanism to request only as many columns as we need to fill (in reality
       slightly overfill) the screen. The reason for this is that if the table is incredibly wide (has a high number of columns), it would slow down the query.
       But while the plugin can detect how wide the display area is, it doesn't know how wide your columns are. So this number represents the average amount of
       space (in characters) duckdb.yazi expects each column to take up when deciding how many columns to request. columns_displayed = display_area_width /
@@ -336,7 +335,7 @@ You can customize the colors of the preview using the following options
 
 The above configuration is what is used in the video at the top of the readme and in the screenshots of the color highlighting section.
 Although the actual colors will depend on your terminal/yazi color scheme.
-These should be placed in your `~./duckdbrc` file as is.
+These should be placed in your `~/.duckdbrc` file as is.
 No header is needed; they are simply commands to run on the startup of any duckdb instance (when using the CLI).
 These will change the color of the output in both duckdb.yazi and when using it in the CLI.
 
