@@ -714,9 +714,10 @@ local function create_cache(job, mode, file_type, limit)
     add_to_list("preloading", cache_str)
 
     local target = tostring(cache_url)
+    local escaped_target = target:gsub("'", "''")
 
     local base_query = generate_preload_query(job, mode, file_type, limit)
-    local query = string.format("COPY (%s) TO '%s' (FORMAT 'parquet');", base_query, target)
+    local query = string.format("COPY (%s) TO '%s' (FORMAT 'parquet');", base_query, escaped_target)
     local output = run_query(job, query, nil, file_type)
     ya.dbg("stdout: " .. tostring(output.stdout))
     ya.dbg("stderr: " .. tostring(output.stderr))
@@ -756,10 +757,11 @@ local function is_plain_text(job, file_type)
         return false
     end
 
+    local escaped_url = tostring(job.file.url):gsub("'", "''")
     local query = {
         ".mode csv",
         ".headers off",
-        string.format("select count(column_name) from (describe from read_csv('%s'));", tostring(job.file.url)),
+        string.format("select count(column_name) from (describe from read_csv('%s'));", escaped_url),
     }
     local output = run_query(job, query, nil, file_type)
     local result = (output and output.stdout == "1\r\n")
