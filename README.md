@@ -12,7 +12,7 @@
 
 This plugin previews your data files in yazi using DuckDB, with two available view modes:
 
-- Preview csv, tsv, JSON, or parquet files in the following modes
+- Preview .csv, .tsv, .txt (tabular), .json, .parquet, .avro, or .xlsx files in the following modes
     - Standard mode (default): Displays the file as a table
     - Summarized mode: Uses DuckDB's summarize function, enhanced with custom formatting for readability
 - Preview duckdb databases

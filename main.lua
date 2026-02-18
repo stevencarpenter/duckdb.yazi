@@ -12,6 +12,8 @@ local update_state = ya.sync(function(state, action, category, key, value)
         return state[category][key]
     elseif action == "check" then
         return state[category][key] ~= nil
+    elseif action == "clear" then
+        state[category] = {}
     else
         ya.err("Unknown action: " .. tostring(action))
     end
@@ -38,7 +40,7 @@ local function is_on_list(category, cache_str)
 end
 
 local function clear_list(category)
-    set_opts(category, {}) -- replaces the whole list with an empty table
+    update_state("clear", category)
 end
 
 local function add_queries_to_table(target_table, queries)
@@ -51,6 +53,14 @@ local function add_queries_to_table(target_table, queries)
         table.insert(target_table, "-c")
         table.insert(target_table, queries)
     end
+end
+
+local function command_with_args(program, args)
+    local cmd = Command(program)
+    for _, arg_value in ipairs(args) do
+        cmd = cmd:arg(arg_value)
+    end
+    return cmd
 end
 
 local function generate_data_source_string(target, file_type)
@@ -151,8 +161,8 @@ local duckdb_opener = ya.sync(function(_, arg)
         table.insert(args, "-ui")
     end
 
-    local child, err = Command("duckdb"):arg(args):stdin(Command.INHERIT):stdout(Command.INHERIT):stderr(Command.INHERIT)
-        :spawn()
+    local child, err = command_with_args("duckdb", args):stdin(Command.INHERIT):stdout(Command.INHERIT)
+        :stderr(Command.INHERIT):spawn()
 
     if not child then
         ya.err("Failed to spawn DuckDB: " .. tostring(err))
@@ -344,7 +354,7 @@ local function run_query(job, query, target, file_type)
     -- Add query or list of queries
     add_queries_to_table(args, query)
 
-    local child = Command("duckdb"):arg(args):stdout(Command.PIPED):stderr(Command.PIPED):spawn()
+    local child = command_with_args("duckdb", args):stdout(Command.PIPED):stderr(Command.PIPED):spawn()
     if not child then
         ya.err("Failed to spawn DuckDB")
         return nil
