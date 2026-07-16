@@ -178,6 +178,7 @@ prepend_previewers = [
     { url = "*.tsv", run = "duckdb" },
     { url = "*.json", run = "duckdb" },
     { url = "*.parquet", run = "duckdb" },
+    { mime = "application/x-parquet", run = "duckdb" },
     { url = "*.avro", run = "duckdb" },
     { url = "*.txt", run = "duckdb" },
     { url = "*.xlsx", run = "duckdb" },
