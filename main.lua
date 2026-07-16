@@ -65,10 +65,48 @@ local function command_with_args(program, args)
 end
 
 local function add_duckdb_security_queries(args)
+    -- Do not set enable_external_access=false: it blocks LocalFileSystem reads and
+    -- breaks preview of local data files. Remote filesystems are disabled instead.
     add_queries_to_table(args, {
-        "SET enable_external_access = false;",
         "SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem';",
     })
+end
+
+local function duckdb_null_init_path()
+    if ya.target_os() == "windows" then
+        return "NUL"
+    end
+    return "/dev/null"
+end
+
+local function append_duckdb_preview_args(args)
+    table.insert(args, "-init")
+    table.insert(args, duckdb_null_init_path())
+end
+
+local function add_extension_queries(args, file_type)
+    if file_type == "excel" then
+        if get_opts("auto_install_extensions") then
+            add_queries_to_table(args, { "install spatial", "load spatial" })
+        else
+            add_queries_to_table(args, { "load spatial" })
+        end
+    elseif file_type == "avro" then
+        if get_opts("auto_install_extensions") then
+            add_queries_to_table(args, { "install avro", "load avro" })
+        else
+            add_queries_to_table(args, { "load avro" })
+        end
+    end
+end
+
+local function log_query_output(label, output)
+    if output then
+        ya.dbg(label .. " stdout: " .. tostring(output.stdout))
+        ya.dbg(label .. " stderr: " .. tostring(output.stderr))
+    else
+        ya.dbg(label .. " run_query returned nil")
+    end
 end
 
 local function generate_data_source_string(target, file_type)
@@ -112,6 +150,7 @@ local function check_file_type(path)
         end
     end
     ya.err("File is not a supported file type")
+    return nil
 end
 
 local get_hovered_url_string = ya.sync(function()
@@ -143,14 +182,16 @@ end
 local duckdb_opener = ya.sync(function(_, arg)
     local hovered_url = Url(get_hovered_url_string())
     local file_type = check_file_type(hovered_url)
+    if not file_type then
+        return
+    end
 
     local args = {}
 
+    add_extension_queries(args, file_type)
     if file_type == "excel" then
-        add_queries_to_table(args, { "install spatial", "load spatial" })
         ya.dbg("duckdb_opener: loading spatial extension for excel")
     elseif file_type == "avro" then
-        add_queries_to_table(args, { "install avro", "load avro" })
         ya.dbg("duckdb_opener: loading avro extension")
     end
 
@@ -202,7 +243,12 @@ function M:entry(job)
     ya.emit("seek", { "lateral scroll" })
 end
 
--- Setup from init.lua: require("duckdb"):setup({ mode = "standard"/"summarized" })
+-- Setup from init.lua:
+-- require("duckdb"):setup({
+--   mode = "standard"/"summarized",
+--   auto_install_extensions = false,  -- recommended; pre-install spatial + avro
+--   cache_enabled = true,             -- set false when previewing sensitive data
+-- })
 function M:setup(opts)
     opts = opts or {}
 
@@ -215,6 +261,14 @@ function M:setup(opts)
     end
     local column_fit_factor = opts.column_fit_factor or 10
     local limit = opts.cache_size or 500
+    local auto_install_extensions = opts.auto_install_extensions
+    if auto_install_extensions == nil then
+        auto_install_extensions = false
+    end
+    local cache_enabled = opts.cache_enabled
+    if cache_enabled == nil then
+        cache_enabled = true
+    end
 
     set_opts("mode", mode)
     set_opts("mode_changed", false)
@@ -225,6 +279,8 @@ function M:setup(opts)
     set_opts("scrolled_columns", 0)
     set_opts("column_fit_factor", column_fit_factor)
     set_opts("limit", limit)
+    set_opts("auto_install_extensions", auto_install_extensions)
+    set_opts("cache_enabled", cache_enabled)
 end
 
 local function generate_preload_query(job, mode, file_type, limit)
@@ -339,14 +395,13 @@ local function run_query(job, query, target, file_type)
     local height = math.max((job.area and job.area.h or 25), 25)
 
     local args = {}
+    append_duckdb_preview_args(args)
 
     if file_type == "duckdb" then
         table.insert(args, "-readonly")
         table.insert(args, tostring(target))
-    elseif file_type == "excel" then
-        add_queries_to_table(args, { "install spatial", "load spatial" })
-    elseif file_type == "avro" then
-        add_queries_to_table(args, { "install avro", "load avro" })
+    else
+        add_extension_queries(args, file_type)
     end
 
     add_duckdb_security_queries(args)
@@ -371,8 +426,8 @@ local function run_query(job, query, target, file_type)
     end
 
     local output, err = child:wait_with_output()
-    if err or not output.status.success then
-        ya.err("DuckDB error: " .. (err or output.stderr or "[unknown error]"))
+    if err or not output or not output.status.success then
+        ya.err("DuckDB error: " .. (err or (output and output.stderr) or "[unknown error]"))
         return nil
     end
 
@@ -678,13 +733,15 @@ local function prepare_peek_context(job)
     local cache_str, cache_url = get_cache_path(job, mode)
     local scrolled_collumns = get_opts("scrolled_columns")
 
-    local use_cache = cache_url
+    local cache_enabled = get_opts("cache_enabled")
+    local use_cache = cache_enabled
+        and cache_url
         and fs.cha(cache_url)
         and not is_on_list("preloading", cache_str)
         and not is_on_list("bad_cache", cache_str)
 
     local target = use_cache and cache_url or file_url
-    local file_type = check_file_type(target)
+    local file_type = check_file_type(use_cache and cache_url or file_url)
     local area = job.area or { h = 25 }
     local limit = area.h - 7
     local offset = job.skip
@@ -726,6 +783,10 @@ local function finish_preload(success, cache_str1, cache_str2)
 end
 
 local function create_cache(job, mode, file_type, limit)
+    if not get_opts("cache_enabled") then
+        return true
+    end
+
     local cache_str, cache_url = get_cache_path(job, mode)
     if not cache_url or fs.cha(cache_url) or is_on_list("bad_cache", cache_str) then
         return true
@@ -739,8 +800,7 @@ local function create_cache(job, mode, file_type, limit)
     local base_query = generate_preload_query(job, mode, file_type, limit)
     local query = string.format("COPY (%s) TO '%s' (FORMAT 'parquet');", base_query, escaped_target)
     local output = run_query(job, query, nil, file_type)
-    ya.dbg("stdout: " .. tostring(output.stdout))
-    ya.dbg("stderr: " .. tostring(output.stderr))
+    log_query_output("[duckdb] create_cache", output)
 
     if not output or (output.stderr and output.stderr ~= "") then
         ya.err(
@@ -802,8 +862,16 @@ function M:preload(job)
     if is_plain_text(job, nil) then
         return true
     end
+
+    if not get_opts("cache_enabled") then
+        return true
+    end
+
     local limit = get_opts("limit")
     local file_type = check_file_type(job.file.url)
+    if not file_type then
+        return true
+    end
     local all_done = true
 
     if file_type == "duckdb" then
@@ -823,6 +891,9 @@ end
 -- Peek with mode toggle if scrolling at top
 function M:peek(job)
     local args = prepare_peek_context(job)
+    if not args.file_type then
+        return require("code"):peek(job)
+    end
     if is_plain_text(job, args.file_type) then
         return require("code"):peek(job)
     end
@@ -830,8 +901,7 @@ function M:peek(job)
     local query = generate_peek_query(args.target, job, args.limit, args.offset, args.file_type, args.cache_str)
     ya.dbg("query: " .. tostring(query))
     local output = run_query(job, query, args.target, args.file_type)
-    ya.dbg("stdout: " .. tostring(output.stdout))
-    ya.dbg("stderr: " .. tostring(output.stderr))
+    log_query_output("[duckdb] peek", output)
     if not output_is_valid(output, args.mode, job) then
         if args.target == args.cache_url and args.scrolled_collumns == 0 then
             add_to_list("bad_cache", args.cache_str)
@@ -842,7 +912,7 @@ function M:peek(job)
         end
     end
 
-    if args.target == args.file_url and args.mode == "summarized" and not args.use_cache then
+    if args.target == args.file_url and args.mode == "summarized" and get_opts("cache_enabled") and not args.use_cache then
         render_output(output, job)
         while not is_on_list("completed", args.cache_str) do
             ya.sleep(0.2)
