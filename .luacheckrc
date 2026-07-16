@@ -1,12 +1,19 @@
 std = "lua51"
+max_line_length = 140
+
 globals = {
     "ya",
     "cx",
     "fs",
     "Command",
     "Url",
+    "ui",
 }
 
 ignore = {
-    "611", -- line length
+    "122", -- unused self in Yazi plugin method signatures
+}
+
+options = {
+    unused_args = false,
 }
