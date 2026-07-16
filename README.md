@@ -197,6 +197,10 @@ prepend_preloaders = [
 ]
 ```
 
+> The `mime = "application/x-parquet"` entry previews parquet files that lack a `.parquet` extension.
+
+<br>
+
 > Note on .txt: I have tried to exclude files that contain only raw text (if duckdb reads only one column). However, if you don't ever work with .txt files
 > which contain tabular data (basically misnamed csv or tsv files), then you can just not include the .txt lines in your setup.
 
@@ -233,29 +237,29 @@ in so that it's easy to change at a later date.
 Then in your [keymap.toml](https://yazi-rs.github.io/docs/configuration/keymap) file add:
 
 ```toml
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = "H"
 run = "plugin duckdb -- -1"
 desc = "Scroll one column to the left"
 
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = "L"
 run = "plugin duckdb -- +1"
 desc = "Scroll one column to the right"
 
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = ["g", "o"]
 run = "plugin duckdb -- -open"
 desc = "open with duckdb"
 
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = ["g", "u"]
 run = "plugin duckdb -- -ui"
 desc = "open with duckdb ui"
 
 ```
 
-> **Yazi 26.x:** Plugin arguments must be passed after `--` (e.g. `plugin duckdb -- -1`). On Yazi 25.x, `plugin duckdb -1` may still work.
+> **Yazi 26.x:** Use `[[mgr.prepend_keymap]]` (Yazi 25.x used `[[manager.prepend_keymap]]`). Plugin arguments must be passed after `--` (e.g. `plugin duckdb -- -1`). On Yazi 25.x, `plugin duckdb -1` may still work.
 
 > I use `H` and `L` because it makes logical sense to me.
 >
@@ -274,9 +278,11 @@ desc = "open with duckdb ui"
 Use with a larger preview window – add to your `yazi.toml`
 
 ```toml
-[manager]
+[mgr]
 ratio = [1, 2, 5]
 ```
+
+> Yazi 25.x used `[manager]`; Yazi 26.x renamed this to `[mgr]` (older configs are auto-migrated on startup).
 
 For reference, the default ratio is 1, 4, 3
 
