@@ -1,5 +1,6 @@
 std = "lua51"
 max_line_length = 140
+unused_args = false
 
 globals = {
     "ya",
@@ -8,12 +9,4 @@ globals = {
     "Command",
     "Url",
     "ui",
-}
-
-ignore = {
-    "122", -- unused self in Yazi plugin method signatures
-}
-
-options = {
-    unused_args = false,
 }

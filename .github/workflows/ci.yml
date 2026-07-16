@@ -21,7 +21,7 @@ jobs:
       - name: Run luacheck
         run: |
           luarocks install luacheck
-          luacheck main.lua
+          luacheck --no-color -q main.lua
 
   smoke:
     runs-on: ubuntu-latest
