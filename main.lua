@@ -1,5 +1,6 @@
 --- @since 25.4.8
 -- DuckDB Plugin for Yazi
+-- Requires DuckDB CLI >= 1.4.2 and Yazi >= 25.4.8 (Yazi >= 25.5.31 recommended).
 local M = {}
 
 local update_state = ya.sync(function(state, action, category, key, value)
@@ -61,6 +62,13 @@ local function command_with_args(program, args)
         cmd = cmd:arg(arg_value)
     end
     return cmd
+end
+
+local function add_duckdb_security_queries(args)
+    add_queries_to_table(args, {
+        "SET enable_external_access = false;",
+        "SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem';",
+    })
 end
 
 local function generate_data_source_string(target, file_type)
@@ -341,6 +349,8 @@ local function run_query(job, query, target, file_type)
         add_queries_to_table(args, { "install avro", "load avro" })
     end
 
+    add_duckdb_security_queries(args)
+
     -- Duckbox config
     add_queries_to_table(args, {
         ".mode duckbox",
@@ -479,7 +489,7 @@ set variable included_columns = (
     )
 
     local filtered_select = string.format(
-        "select %scolumns(c -> list_contains(getvariable('included_columns'), c)) from %s limit %d offset %d;",
+        "select %scolumns(lambda c: list_contains(getvariable('included_columns'), c)) from %s limit %d offset %d;",
         row_id_prefix,
         target,
         limit,

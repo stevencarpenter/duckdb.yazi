@@ -128,23 +128,29 @@ Supported file types:
 
 ## Installation
 
+### Requirements
+
+| Component | Minimum | Recommended | Why |
+|-----------|---------|-------------|-----|
+| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.4.8 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
+| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.4.2 | 1.5.0+ | Fixes [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp); 1.5+ uses the modern lambda syntax this fork targets |
+
+Verify your versions:
+
+```sh
+yazi --version
+duckdb --version
+```
+
 ### Installing dependencies
 
-First you will need Yazi and DuckDB installed.
+Install Yazi and DuckDB using the links above, then add this plugin with the Yazi package manager:
 
-- [Yazi Installation instructions](https://yazi-rs.github.io/docs/installation)
-
-- [DuckDB Installation instructions](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=macos&download_method=direct)
-
-Once these are installed, you can use the yazi plugin manager to install the plugin.
-
-Use the command:
-
-```
-ya pack -a wylie102/duckdb
+```sh
+ya pkg add stevencarpenter/duckdb
 ```
 
-in your terminal
+> This fork (`stevencarpenter/duckdb.yazi`) includes fixes and `.avro` support not yet merged into upstream `wylie102/duckdb.yazi`. Use the command above rather than `ya pkg add wylie102/duckdb`.
 
 <br>
 
@@ -356,6 +362,22 @@ In which case it will look like below.
 <img width="700" alt="Screenshot 2025-03-22 at 18 00 06" src="https://github.com/user-attachments/assets/db09fff9-2db1-4273-9ddf-34d0bf087967" />
 
 More information [here](https://duckdb.org/docs/stable/clients/cli/dot_commands#configuring-the-result-syntax-highlighter)
+
+<br><br>
+
+## Security
+
+Preview and preload operations spawn DuckDB with hardening enabled:
+
+- `SET enable_external_access = false` — blocks outbound network access during preview (extension `install`/`load` runs first, then this is applied)
+- `SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem'` — blocks remote filesystem reads
+
+**Residual risks:**
+
+- DuckDB still reads local files you preview; treat untrusted data files (downloads, shared folders) as potentially hostile.
+- `.xlsx` and `.avro` previews download DuckDB extensions on first use (`spatial`, `avro`). Pre-install them in your DuckDB environment if you want to avoid runtime downloads.
+- Preview caches write parquet copies under Yazi's cache directory. Run `yazi --clear-cache` after browsing sensitive data.
+- Opening files in DuckDB UI (`g` + `o` / `g` + `u`) launches a full interactive DuckDB session without preview hardening.
 
 <br><br>
 
