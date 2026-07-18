@@ -1,0 +1,576 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-18T09:06:16.477Z",
+  "repository": "stevencarpenter/duckdb.yazi",
+  "pull_request": {
+    "additions": 1341,
+    "base": "main",
+    "base_sha": "3f8c8633d4b02d3099cddf9e892ca5469694ba22",
+    "body": "This pull request updates the documentation and code to add support for `.avro` files, improve configuration consistency, and enhance usability. It also introduces several documentation corrections and clarifications, as well as a minor code refactor for state management and command handling.\r\n\r\n**File type and configuration updates:**\r\n- Added `.avro` file support throughout the documentation and configuration examples, including `README.md` and the `yazi.toml` plugin/preloader configuration (`url` replaces `name` for matching) [[1]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L15-R15) [[2]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5R31-R34) [[3]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L146-R190) [[4]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L335-R366).\r\n- Updated the data source string generation in `main.lua` to handle `.avro` files using DuckDB's `read_avro` function.\r\n\r\n**Documentation improvements and corrections:**\r\n- Corrected typos and improved clarity/consistency in the `README.md`, including spelling, grammar, and formatting [[1]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L52-R60) [[2]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L89-R105) [[3]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L112-R139) [[4]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L190-R205) [[5]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L227-R257) [[6]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L253-R324) [[7]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L305-R339) [[8]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L317-R348).\r\n- Clarified `.txt` and `.xlsx` file handling, and expanded configuration instructions [[1]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L146-R190) [[2]](diffhunk://#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5L253-R324).\r\n\r\n**Codebase enhancements:**\r\n- Refactored state management in `main.lua` by adding a `clear` action to `update_state` and updating `clear_list` to use it [[1]](diffhunk://#diff-cee6f7ace765d4b3e8274806fb658676b5f550810b495d8987ea30ab1121ea73R15-R16) [[2]](diffhunk://#diff-cee6f7ace765d4b3e8274806fb658676b5f550810b495d8987ea30ab1121ea73L41-R43).\r\n- Added a utility function `command_with_args` for building commands with arguments in a more structured way.\r\n\r\n**Notable behavioral changes:**\r\n- Updated the summary of recent changes in the `README.md` to highlight `.avro` support and the new `url` configuration key.\r\n\r\nThese changes collectively improve file type support, documentation accuracy, and code maintainability.",
+    "changed_files": 3,
+    "closed_at": "2026-02-18T09:15:00Z",
+    "comments": 0,
+    "commits": 8,
+    "created_at": "2026-02-18T08:31:28Z",
+    "deletions": 685,
+    "draft": false,
+    "head": "add-avro-fix-docs",
+    "head_sha": "394115ae122643704de5f5b6d0e11f4e32ddcc81",
+    "merge_commit_sha": "6400cbd4286db658fabfaaf604590d27bff9206e",
+    "merged_at": "2026-02-18T09:15:00Z",
+    "number": 2,
+    "review_comments": 16,
+    "state": "closed",
+    "title": "feat: add support for .avro file type and toggle preview mode",
+    "updated_at": "2026-02-18T09:15:02Z",
+    "user": "stevencarpenter"
+  },
+  "conversation_comments": [],
+  "reviews": [
+    {
+      "body": "\n### 💡 Codex Review\n\nHere are some automated review suggestions for this pull request.\n\n**Reviewed commit:** `dfefdb12eb`\n    \n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](http://chatgpt.com/codex/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+      "commit_id": "dfefdb12eb68990ad75531b36a09c04dd47c69bf",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#pullrequestreview-3818473238",
+      "id": 3818473238,
+      "state": "COMMENTED",
+      "submitted_at": "2026-02-18T08:35:34Z",
+      "user": "chatgpt-codex-connector[bot]"
+    },
+    {
+      "body": "## Pull request overview\n\nAdds Avro (`.avro`) support to the yazi DuckDB previewer/opener and introduces a reusable preview-mode toggle, alongside README/configuration updates and general repo hygiene.\n\n**Changes:**\n- Add `.avro` detection and generate DuckDB sources via `read_avro(...)`, including loading the DuckDB `avro` extension when needed.\n- Introduce a `toggle_preview_mode` helper and refactor mode toggling to reuse it.\n- Update README configuration/examples (including `name` → `url`) and add a repository `.gitignore`.\n\n### Reviewed changes\n\nCopilot reviewed 2 out of 3 changed files in this pull request and generated 8 comments.\n\n| File | Description |\n| ---- | ----------- |\n| main.lua | Adds Avro support, improves SQL string escaping/identifier quoting, introduces preview mode toggling helper, and refactors opener invocation. |\n| README.md | Updates supported file types and configuration docs; multiple wording/formatting changes. |\n| .gitignore | Adds standard ignore rules for common IDE/OS/tooling artifacts. |\n\n\n\n\n\n---\n\n💡 <a href=\"/stevencarpenter/duckdb.yazi/new/main/.github/instructions?filename=*.instructions.md\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Add Copilot custom instructions</a> for smarter, more guided reviews. <a href=\"https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Learn how to get started</a>.",
+      "commit_id": "dfefdb12eb68990ad75531b36a09c04dd47c69bf",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#pullrequestreview-3818485769",
+      "id": 3818485769,
+      "state": "COMMENTED",
+      "submitted_at": "2026-02-18T08:38:21Z",
+      "user": "copilot-pull-request-reviewer[bot]"
+    },
+    {
+      "body": "## Pull request overview\n\nCopilot reviewed 2 out of 3 changed files in this pull request and generated 3 comments.\n\n\n\n\n\n---\n\n💡 <a href=\"/stevencarpenter/duckdb.yazi/new/main/.github/instructions?filename=*.instructions.md\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Add Copilot custom instructions</a> for smarter, more guided reviews. <a href=\"https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Learn how to get started</a>.",
+      "commit_id": "bf7082befe657f0c59ae3ee16241a6a2f0bafd13",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#pullrequestreview-3818542862",
+      "id": 3818542862,
+      "state": "COMMENTED",
+      "submitted_at": "2026-02-18T08:50:37Z",
+      "user": "copilot-pull-request-reviewer[bot]"
+    },
+    {
+      "body": "## Pull request overview\n\nCopilot reviewed 2 out of 3 changed files in this pull request and generated 4 comments.\n\n\n\n\n\n---\n\n💡 <a href=\"/stevencarpenter/duckdb.yazi/new/main/.github/instructions?filename=*.instructions.md\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Add Copilot custom instructions</a> for smarter, more guided reviews. <a href=\"https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Learn how to get started</a>.",
+      "commit_id": "873db5d82b0eabeff5b9d19d7d0737062810164e",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#pullrequestreview-3818614931",
+      "id": 3818614931,
+      "state": "COMMENTED",
+      "submitted_at": "2026-02-18T09:04:03Z",
+      "user": "copilot-pull-request-reviewer[bot]"
+    }
+  ],
+  "inline_review_comments": [
+    {
+      "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Use `:arg` for Command builder in opener**\n\nThis new opener path calls `Command(\"duckdb\"):args(args)`, but the plugin already migrated to `:arg(...)` for Yazi 25.5.28 compatibility (see `run_query` in the same file). On current Yazi versions where `:args` is not available, invoking the opener (`duckdb` / `duckdb -open`) will fail at runtime before DuckDB starts, so users lose the plugin's open-in-duckdb functionality.\n\nUseful? React with 👍 / 👎.",
+      "commit_id": "dfefdb12eb68990ad75531b36a09c04dd47c69bf",
+      "created_at": "2026-02-18T08:35:34Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821022459",
+      "id": 2821022459,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "main.lua",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:35:34Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821022459",
+      "user": "chatgpt-codex-connector[bot]"
+    },
+    {
+      "body": "The phrase \"user-attachments only the columns\" looks like an accidental paste/auto-replacement and doesn’t read correctly. Please replace it with a clear explanation (e.g., that the plugin *requests only* enough columns to fill the preview).\n```suggestion\n    - More detailed explanation: Implementing column scrolling also gave us a mechanism to request only as many columns as we need to fill (in reality\n```",
+      "commit_id": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "created_at": "2026-02-18T08:38:19Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034756",
+      "id": 2821034756,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:38:22Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034756",
+      "user": "Copilot"
+    },
+    {
+      "body": "The path is written as `~./duckdbrc`, which is not a valid home-directory path. It should be `~/.duckdbrc`.\n```suggestion\nThese should be placed in your `~/.duckdbrc` file as is.\n```",
+      "commit_id": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "created_at": "2026-02-18T08:38:19Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034787",
+      "id": 2821034787,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:38:22Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034787",
+      "user": "Copilot"
+    },
+    {
+      "body": "The new `toggle_preview_mode` block is indented with spaces, while the rest of `main.lua` uses tabs. This makes the file’s indentation inconsistent; please re-indent this function to match the existing style.\n```suggestion\n\tlocal mode = get_opts(\"mode\")\n\tlocal new_mode = (mode == \"summarized\") and \"standard\" or \"summarized\"\n\tset_opts(\"mode\", new_mode)\n\tset_opts(\"mode_changed\", true)\n\tset_opts(\"scrolled_columns\", 0)\n\n\tlocal only_if = target_url\n\tif not only_if then\n\t\tlocal hovered = get_hovered_url_string()\n\t\tif hovered and hovered ~= \"\" then\n\t\t\tonly_if = Url(hovered)\n\t\tend\n\tend\n\n\tif only_if then\n\t\tya.emit(\"peek\", { 50, only_if = only_if })\n\telse\n\t\tya.emit(\"peek\", { 50 })\n\tend\n```",
+      "commit_id": "394115ae122643704de5f5b6d0e11f4e32ddcc81",
+      "created_at": "2026-02-18T08:38:20Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034801",
+      "id": 2821034801,
+      "in_reply_to_id": null,
+      "line": 132,
+      "path": "main.lua",
+      "side": "RIGHT",
+      "start_line": 114,
+      "updated_at": "2026-02-18T08:38:22Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034801",
+      "user": "Copilot"
+    },
+    {
+      "body": "Typo in the docs: \"aditional\" should be \"additional\" (and it’s also inconsistent with the rest of the README where \"Additional\" is already used).\n```suggestion\n> Requires a small amount of extra configuration from previous versions. These are keymaps (I use `H` and `L`) and some other additional customisation options.\n```",
+      "commit_id": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "created_at": "2026-02-18T08:38:20Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034815",
+      "id": 2821034815,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:38:23Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034815",
+      "user": "Copilot"
+    },
+    {
+      "body": "Typo in the keymap note: \"patent\" should be \"parent\" (referring to parent/child directories).\n```suggestion\n   > (different from standard `h` and `l` for parent and child directory).\n```",
+      "commit_id": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "created_at": "2026-02-18T08:38:20Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034829",
+      "id": 2821034829,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:38:23Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034829",
+      "user": "Copilot"
+    },
+    {
+      "body": "The `cache_size` setting is documented twice, and the first bullet is corrupted (it ends with \"Be aware of this\" and then repeats part of the `mode` explanation). Please remove the duplicate and fix the description so it only explains `cache_size`.\n```suggestion\n\n```",
+      "commit_id": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "created_at": "2026-02-18T08:38:20Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034847",
+      "id": 2821034847,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:38:23Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034847",
+      "user": "Copilot"
+    },
+    {
+      "body": "Typo in the `minmax_column_width` description: \"mim/max\" should be \"min/max\".\n```suggestion\n  and time in a datetime column. If you need more, set it higher, if you want min/max to take up less space, set it lower.\n```",
+      "commit_id": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "created_at": "2026-02-18T08:38:20Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034860",
+      "id": 2821034860,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:38:23Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034860",
+      "user": "Copilot"
+    },
+    {
+      "body": "Typo in the `column_fit_factor` TLDR: \"feels slightly show\" should be \"feels slightly slow\".\n```suggestion\n      your table when there are still more columns to scroll OR you work with tables with a huge number of columns and scrolling them feels slightly slow,\n```",
+      "commit_id": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "created_at": "2026-02-18T08:38:21Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821034875",
+      "id": 2821034875,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:38:21Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821034875",
+      "user": "Copilot"
+    },
+    {
+      "body": "Missing Avro extension in preloaders: The prepend_preloaders section doesn't include the .avro file type, but previewers does. Since preloaders are used for caching, Avro files won't be cached on first load, which could impact performance. Consider adding an entry for Avro files here as well.\n```suggestion\n    { url = \"*.parquet\", run = \"duckdb\", multi = false },\n    { url = \"*.avro\", run = \"duckdb\", multi = false },\n```",
+      "commit_id": "394115ae122643704de5f5b6d0e11f4e32ddcc81",
+      "created_at": "2026-02-18T08:50:36Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821090954",
+      "id": 2821090954,
+      "in_reply_to_id": null,
+      "line": 176,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:50:39Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821090954",
+      "user": "Copilot"
+    },
+    {
+      "body": "SQL injection vulnerability in cache path: The cache target path on line 719 is directly interpolated into the SQL query without escaping. If the cache_url contains single quotes, this could lead to SQL injection. The same escaping logic from generate_data_source_string should be applied here.\n```suggestion\n    local escaped_target = target:gsub(\"'\", \"''\")\n\n    local base_query = generate_preload_query(job, mode, file_type, limit)\n    local query = string.format(\"COPY (%s) TO '%s' (FORMAT 'parquet');\", base_query, escaped_target)\n```",
+      "commit_id": "3baba74ae63bbafadd4a07615ac3135997e0c24d",
+      "created_at": "2026-02-18T08:50:36Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821090997",
+      "id": 2821090997,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "main.lua",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:50:39Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821090997",
+      "user": "Copilot"
+    },
+    {
+      "body": "In `is_plain_text`, the SQL query is built with `string.format(\"select count(column_name) from (describe from read_csv('%s'));\", tostring(job.file.url))`, inserting `job.file.url` directly into a single-quoted string without escaping. A `.txt` filename containing a single quote and SQL metacharacters can break out of the string literal and inject arbitrary DuckDB statements, allowing an attacker who controls a filename to execute queries (e.g., reading sensitive files and copying them to attacker-readable locations) whenever that file is previewed. To fix this, construct the data source via a safe helper like `generate_data_source_string` or explicitly escape single quotes in `job.file.url` before embedding it in the SQL string so that filenames cannot alter the surrounding query structure.\n```suggestion\n    local escaped_url = tostring(job.file.url):gsub(\"'\", \"''\")\n    local query = {\n        \".mode csv\",\n        \".headers off\",\n        string.format(\"select count(column_name) from (describe from read_csv('%s'));\", escaped_url),\n```",
+      "commit_id": "3baba74ae63bbafadd4a07615ac3135997e0c24d",
+      "created_at": "2026-02-18T08:50:37Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821091037",
+      "id": 2821091037,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "main.lua",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T08:50:37Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821091037",
+      "user": "Copilot"
+    },
+    {
+      "body": "The cache output path is interpolated into the SQL string as `TO '%s'` without escaping. If the cache path contains a single quote, the `COPY` query will fail (and it also creates an avoidable SQL-injection surface). Escape single quotes in `target` the same way as in `generate_data_source_string` (e.g., replace `'` with `''`) before building the query.",
+      "commit_id": "394115ae122643704de5f5b6d0e11f4e32ddcc81",
+      "created_at": "2026-02-18T09:04:03Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821161302",
+      "id": 2821161302,
+      "in_reply_to_id": null,
+      "line": 730,
+      "path": "main.lua",
+      "side": "RIGHT",
+      "start_line": 726,
+      "updated_at": "2026-02-18T09:04:05Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821161302",
+      "user": "Copilot"
+    },
+    {
+      "body": "The opening feature bullet says the plugin can preview only “csv, tsv, JSON, or parquet” files, but the rest of the README (and code) indicates `.txt`, `.xlsx`, and now `.avro` are also supported. Please update this line to reflect the full supported set to avoid confusing users.\n```suggestion\n- Preview .csv, .tsv, .txt (tabular), .json, .parquet, .avro, or .xlsx files in the following modes\n```",
+      "commit_id": "873db5d82b0eabeff5b9d19d7d0737062810164e",
+      "created_at": "2026-02-18T09:04:03Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821161326",
+      "id": 2821161326,
+      "in_reply_to_id": null,
+      "line": null,
+      "path": "README.md",
+      "side": "RIGHT",
+      "start_line": null,
+      "updated_at": "2026-02-18T09:04:05Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821161326",
+      "user": "Copilot"
+    },
+    {
+      "body": "`clear_list` calls `set_opts(category, {})`, which writes into the `opts` table rather than clearing the state table used by `add_to_list/is_on_list`. As a result, lists like `completed` are never actually cleared and can grow unbounded. Consider adding a dedicated `update_state` action to replace `state[category]` with `{}` (or a dedicated `clear_list` sync function) and use that here instead of `set_opts`.",
+      "commit_id": "394115ae122643704de5f5b6d0e11f4e32ddcc81",
+      "created_at": "2026-02-18T09:04:03Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821161349",
+      "id": 2821161349,
+      "in_reply_to_id": null,
+      "line": 44,
+      "path": "main.lua",
+      "side": "RIGHT",
+      "start_line": 42,
+      "updated_at": "2026-02-18T09:04:05Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821161349",
+      "user": "Copilot"
+    },
+    {
+      "body": "The `is_plain_text` helper builds a DuckDB SQL command by interpolating `job.file.url` directly into a string literal without escaping single quotes, e.g. `read_csv('%s')`. A filename containing a `'` can break out of the string and inject arbitrary SQL, so an attacker who can place a maliciously named `.txt` file in a directory a user previews could execute arbitrary DuckDB commands under the user's account (including reading other databases and writing results to attacker-accessible locations). To fix this, ensure the file path is safely escaped (e.g. doubling single quotes) or reuse the existing `generate_data_source_string`/table-function pattern so paths never enter SQL unescaped.",
+      "commit_id": "394115ae122643704de5f5b6d0e11f4e32ddcc81",
+      "created_at": "2026-02-18T09:04:04Z",
+      "html_url": "https://github.com/stevencarpenter/duckdb.yazi/pull/2#discussion_r2821161358",
+      "id": 2821161358,
+      "in_reply_to_id": null,
+      "line": 773,
+      "path": "main.lua",
+      "side": "RIGHT",
+      "start_line": 769,
+      "updated_at": "2026-02-18T09:04:04Z",
+      "url": "https://api.github.com/repos/stevencarpenter/duckdb.yazi/pulls/comments/2821161358",
+      "user": "Copilot"
+    }
+  ],
+  "timeline": [
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "dfefdb12eb68990ad75531b36a09c04dd47c69bf",
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T08:31:29Z",
+      "event": "review_requested",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T08:31:57Z",
+      "event": "copilot_work_started",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": "dfefdb12eb68990ad75531b36a09c04dd47c69bf",
+      "created_at": null,
+      "event": "reviewed",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": "dfefdb12eb68990ad75531b36a09c04dd47c69bf",
+      "created_at": null,
+      "event": "reviewed",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "49acf708bcede1a3b2f903e404d07713d2b6f71d",
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "bf7082befe657f0c59ae3ee16241a6a2f0bafd13",
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T08:45:15Z",
+      "event": "review_requested",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T08:45:44Z",
+      "event": "copilot_work_started",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": "bf7082befe657f0c59ae3ee16241a6a2f0bafd13",
+      "created_at": null,
+      "event": "reviewed",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52",
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "3baba74ae63bbafadd4a07615ac3135997e0c24d",
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T08:57:41Z",
+      "event": "review_requested",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T08:58:08Z",
+      "event": "copilot_work_started",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "873db5d82b0eabeff5b9d19d7d0737062810164e",
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": "873db5d82b0eabeff5b9d19d7d0737062810164e",
+      "created_at": null,
+      "event": "reviewed",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "da7ead5ae950bf20702e7a3dcef202841f064bff",
+      "state_reason": null
+    },
+    {
+      "actor": null,
+      "commit_id": null,
+      "created_at": null,
+      "event": "committed",
+      "label": null,
+      "sha": "394115ae122643704de5f5b6d0e11f4e32ddcc81",
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": "6400cbd4286db658fabfaaf604590d27bff9206e",
+      "created_at": "2026-02-18T09:15:00Z",
+      "event": "merged",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T09:15:00Z",
+      "event": "closed",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    },
+    {
+      "actor": "stevencarpenter",
+      "commit_id": null,
+      "created_at": "2026-02-18T09:15:02Z",
+      "event": "head_ref_deleted",
+      "label": null,
+      "sha": null,
+      "state_reason": null
+    }
+  ],
+  "commits": [
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T08:25:28Z",
+      "message": "feat: add support for .avro file type and toggle preview mode",
+      "sha": "dfefdb12eb68990ad75531b36a09c04dd47c69bf"
+    },
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T08:25:28Z",
+      "message": "refactor: improve code formatting and consistency in main.lua",
+      "sha": "49acf708bcede1a3b2f903e404d07713d2b6f71d"
+    },
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T08:41:55Z",
+      "message": "Merge remote-tracking branch 'origin/add-avro-fix-docs' into add-avro-fix-docs\n\n# Conflicts:\n#\tmain.lua",
+      "sha": "bf7082befe657f0c59ae3ee16241a6a2f0bafd13"
+    },
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T08:55:06Z",
+      "message": "refactor: tabs --> spaces",
+      "sha": "23d1fd3d762ef67b26e38d486869e2c8ed14dd52"
+    },
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T08:57:05Z",
+      "message": "Apply suggestions from code review\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+      "sha": "3baba74ae63bbafadd4a07615ac3135997e0c24d"
+    },
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T09:01:42Z",
+      "message": "Apply suggestions from code review\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+      "sha": "873db5d82b0eabeff5b9d19d7d0737062810164e"
+    },
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T09:08:35Z",
+      "message": "fix PR review feedback for arg handling and state clearing",
+      "sha": "da7ead5ae950bf20702e7a3dcef202841f064bff"
+    },
+    {
+      "author": "Steven Carpenter",
+      "date": "2026-02-18T09:11:34Z",
+      "message": "refactor: tabs --> spaces",
+      "sha": "394115ae122643704de5f5b6d0e11f4e32ddcc81"
+    }
+  ],
+  "files": [
+    {
+      "additions": 570,
+      "changes": 570,
+      "deletions": 0,
+      "filename": ".gitignore",
+      "sha": "e3079b9e263693945a1b8cb24034ab0f6c9f23f6",
+      "status": "added"
+    },
+    {
+      "additions": 106,
+      "changes": 182,
+      "deletions": 76,
+      "filename": "README.md",
+      "sha": "d2c9766bb11def78fb670865aef9cd8b6fdd67a6",
+      "status": "modified"
+    },
+    {
+      "additions": 665,
+      "changes": 1274,
+      "deletions": 609,
+      "filename": "main.lua",
+      "sha": "336cdcf19ba811a89b9acdc9693025f0d5d98b5c",
+      "status": "modified"
+    }
+  ]
+}

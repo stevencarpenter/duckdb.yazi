@@ -1,5 +1,12 @@
 # duckdb.yazi
 
+> [!NOTE]
+> This is an independently maintained continuation of [wylie102/duckdb.yazi](https://github.com/wylie102/duckdb.yazi), originally created by
+> [Thomas Wylie](https://github.com/wylie102). [Steven Carpenter](https://github.com/stevencarpenter) has maintained this continuation since 2026.
+> The original work and subsequent modifications are distributed under the [MIT License](LICENSE).
+>
+> DuckDB is a trademark of the DuckDB Foundation. This independent project is not affiliated with or endorsed by the DuckDB Foundation.
+
 **Uses  [duckdb](https://github.com/duckdb/duckdb) to quickly preview and summarize data files in [yazi](https://github.com/sxyazi/yazi)!**
 
 <br>
@@ -13,8 +20,8 @@
 This plugin previews your data files in yazi using DuckDB, with two available view modes:
 
 - Preview .csv, .tsv, .txt (tabular), .json, .parquet, .avro, or .xlsx files in the following modes
-    - Standard mode (default): Displays the file as a table
-    - Summarized mode: Uses DuckDB's summarize function, enhanced with custom formatting for readability
+    - Standard mode: Displays the file as a table
+    - Summarized mode (default): Uses DuckDB's summarize function, enhanced with custom formatting for readability
 - Preview duckdb databases
     - See the tables and the number of rows, columns, indexes in each. Plus a list of column names in index order.
 - Scroll rows using `J` and `K`
@@ -52,11 +59,11 @@ Supported file types:
 
 > Requires a small amount of extra configuration from previous versions. These are keymaps (I use `H` and `L`) and some other additional customisation options.
 >
->See the [Installation](https://github.com/wylie102/duckdb.yazi/tree/main?tab=readme-ov-file#installation)
-> and [Configuration](https://github.com/wylie102/duckdb.yazi/tree/main?tab=readme-ov-file#configurationcustomisation) sections.
+>See the [Installation](#installation)
+> and [Configuration](#configurationcustomisation) sections.
 
 > **Cache changes – update 04/04/25** – If you want info on the latest (cache-related changes), then
-> see [here](https://github.com/wylie102/duckdb.yazi?tab=readme-ov-file#setup-and-usage-changes-from-previous-versions). Otherwise, keep reading new features and
+> see [here](#setup-and-usage-changes-from-previous-versions). Otherwise, keep reading new features and
 > config options below.
 <br>
 
@@ -133,7 +140,7 @@ Supported file types:
 | Component | Minimum | Recommended | Why |
 |-----------|---------|-------------|-----|
 | [Yazi](https://yazi-rs.github.io/docs/installation) | 25.4.8 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
-| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.4.2 | 1.5.0+ | Fixes [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp); 1.5+ uses the modern lambda syntax this fork targets |
+| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.4.2 | 1.5.0+ | Fixes [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp); 1.5+ uses the modern lambda syntax this continuation targets |
 
 Verify your versions:
 
@@ -150,7 +157,7 @@ Install Yazi and DuckDB using the links above, then add this plugin with the Yaz
 ya pkg add stevencarpenter/duckdb
 ```
 
-> This fork (`stevencarpenter/duckdb.yazi`) includes fixes and `.avro` support not yet merged into upstream `wylie102/duckdb.yazi`. Use the command above rather than `ya pkg add wylie102/duckdb`.
+> This continuation (`stevencarpenter/duckdb.yazi`) includes fixes and `.avro` support not yet merged into the original `wylie102/duckdb.yazi`. Use the command above rather than `ya pkg add wylie102/duckdb`.
 
 ### Pre-install DuckDB extensions (recommended)
 
@@ -226,7 +233,7 @@ require("duckdb"):setup({
 
 See [SECURITY.md](SECURITY.md) for the full threat model and [Configuration](#configurationcustomisation) for all options.
 
-This is where the configuration/settings can go ([see below](https://github.com/wylie102/duckdb.yazi?tab=readme-ov-file#configurationcustomisation)), but the
+This is where the configuration/settings can go ([see below](#configurationcustomisation)), but the
 init.lua file and this line are required for the plugin to run, even if the settings are blank. Another option is to add all the settings with the defaults
 in so that it's easy to change at a later date.
 

@@ -5,7 +5,7 @@
 | Version | Supported |
 |---------|-----------|
 | `main` branch of [stevencarpenter/duckdb.yazi](https://github.com/stevencarpenter/duckdb.yazi) | Yes |
-| Upstream [wylie102/duckdb.yazi](https://github.com/wylie102/duckdb.yazi) | Unmaintained (last update May 2025) |
+| Original [wylie102/duckdb.yazi](https://github.com/wylie102/duckdb.yazi) | Unmaintained (last update May 2025) |
 
 Minimum runtime versions:
 
@@ -55,7 +55,7 @@ Interactive open (`g` + `o` / `g` + `u`) intentionally **does not** apply previe
 2. **Local filesystem access** — DuckDB reads files you can already read; preview hardening blocks remote FS, not local.
 3. **Extension supply chain** — Set `auto_install_extensions = false` and pre-install extensions locally.
 4. **Cache persistence** — Preview caches may retain sensitive data on disk. Use `cache_enabled = false` or `yazi --clear-cache`.
-5. **Fork maintenance** — Security fixes depend on this fork staying current with DuckDB/Yazi advisories.
+5. **Continuation maintenance** — Security fixes depend on this continuation staying current with DuckDB/Yazi advisories.
 
 ## Recommended secure configuration
 
