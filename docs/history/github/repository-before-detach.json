@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-18T09:06:16.477Z",
+  "repository": "stevencarpenter/duckdb.yazi",
+  "repository_state": {
+    "allow_auto_merge": true,
+    "allow_forking": true,
+    "allow_merge_commit": false,
+    "allow_rebase_merge": false,
+    "allow_squash_merge": true,
+    "archived": false,
+    "created_at": "2026-01-25T05:45:38Z",
+    "default_branch": "main",
+    "delete_branch_on_merge": true,
+    "description": "Yazi plugin that uses duckdb to preview data files.",
+    "disabled": false,
+    "fork": true,
+    "forks_count": 0,
+    "full_name": "stevencarpenter/duckdb.yazi",
+    "has_discussions": false,
+    "has_issues": false,
+    "has_pages": false,
+    "has_projects": true,
+    "has_wiki": true,
+    "homepage": "",
+    "id": 1141624262,
+    "license": "MIT",
+    "node_id": "R_kgDORAvNxg",
+    "open_issues_count": 0,
+    "parent": "wylie102/duckdb.yazi",
+    "private": false,
+    "pushed_at": "2026-07-18T08:15:06Z",
+    "security_and_analysis": {
+      "dependabot_security_updates": {
+        "status": "disabled"
+      },
+      "secret_scanning": {
+        "status": "enabled"
+      },
+      "secret_scanning_non_provider_patterns": {
+        "status": "disabled"
+      },
+      "secret_scanning_push_protection": {
+        "status": "enabled"
+      },
+      "secret_scanning_validity_checks": {
+        "status": "disabled"
+      }
+    },
+    "size": 79,
+    "source": "wylie102/duckdb.yazi",
+    "stargazers_count": 0,
+    "subscribers_count": 0,
+    "topics": [],
+    "updated_at": "2026-07-18T08:15:12Z",
+    "visibility": "public",
+    "watchers_count": 0,
+    "web_commit_signoff_required": false
+  },
+  "branches": [
+    {
+      "name": "main",
+      "protected": false,
+      "sha": "a9e7fbb34651da0101614656d781cc61b71c7cfb"
+    }
+  ],
+  "tags": [],
+  "releases": [],
+  "actions_permissions": {
+    "enabled": true,
+    "allowed_actions": "all",
+    "sha_pinning_required": false
+  },
+  "workflow_permissions": {
+    "default_workflow_permissions": "write",
+    "can_approve_pull_request_reviews": true
+  },
+  "workflows": [
+    {
+      "created_at": "2026-07-16T02:01:19.000-06:00",
+      "id": 314261385,
+      "name": "CI",
+      "path": ".github/workflows/ci.yml",
+      "state": "active",
+      "updated_at": "2026-07-18T02:15:05.000-06:00"
+    },
+    {
+      "created_at": "2026-01-26T00:50:56.000-07:00",
+      "id": 227024138,
+      "name": "Copilot code review",
+      "path": "dynamic/copilot-pull-request-reviewer/copilot-pull-request-reviewer",
+      "state": "active",
+      "updated_at": "2026-01-26T00:50:56.000-07:00"
+    },
+    {
+      "created_at": "2026-01-25T05:02:12.000-07:00",
+      "id": 226824791,
+      "name": "Copilot coding agent",
+      "path": "dynamic/copilot-swe-agent/copilot",
+      "state": "active",
+      "updated_at": "2026-01-25T05:02:12.000-07:00"
+    }
+  ]
+}
