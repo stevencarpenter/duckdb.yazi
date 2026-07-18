@@ -128,23 +128,39 @@ Supported file types:
 
 ## Installation
 
+### Requirements
+
+| Component | Minimum | Recommended | Why |
+|-----------|---------|-------------|-----|
+| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.4.8 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
+| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.4.2 | 1.5.0+ | Fixes [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp); 1.5+ uses the modern lambda syntax this fork targets |
+
+Verify your versions:
+
+```sh
+yazi --version
+duckdb --version
+```
+
 ### Installing dependencies
 
-First you will need Yazi and DuckDB installed.
+Install Yazi and DuckDB using the links above, then add this plugin with the Yazi package manager:
 
-- [Yazi Installation instructions](https://yazi-rs.github.io/docs/installation)
-
-- [DuckDB Installation instructions](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=macos&download_method=direct)
-
-Once these are installed, you can use the yazi plugin manager to install the plugin.
-
-Use the command:
-
-```
-ya pack -a wylie102/duckdb
+```sh
+ya pkg add stevencarpenter/duckdb
 ```
 
-in your terminal
+> This fork (`stevencarpenter/duckdb.yazi`) includes fixes and `.avro` support not yet merged into upstream `wylie102/duckdb.yazi`. Use the command above rather than `ya pkg add wylie102/duckdb`.
+
+### Pre-install DuckDB extensions (recommended)
+
+For `.xlsx` and `.avro` previews, pre-install extensions once so the plugin does not need to download them at preview time:
+
+```sh
+duckdb -c "INSTALL spatial; LOAD spatial; INSTALL avro; LOAD avro;"
+```
+
+Then use the secure defaults in `init.lua` (see [Configuration](#configurationcustomisation)).
 
 <br>
 
@@ -162,6 +178,7 @@ prepend_previewers = [
     { url = "*.tsv", run = "duckdb" },
     { url = "*.json", run = "duckdb" },
     { url = "*.parquet", run = "duckdb" },
+    { mime = "application/x-parquet", run = "duckdb" },
     { url = "*.avro", run = "duckdb" },
     { url = "*.txt", run = "duckdb" },
     { url = "*.xlsx", run = "duckdb" },
@@ -180,6 +197,10 @@ prepend_preloaders = [
 ]
 ```
 
+> The `mime = "application/x-parquet"` entry previews parquet files that lack a `.parquet` extension.
+
+<br>
+
 > Note on .txt: I have tried to exclude files that contain only raw text (if duckdb reads only one column). However, if you don't ever work with .txt files
 > which contain tabular data (basically misnamed csv or tsv files), then you can just not include the .txt lines in your setup.
 
@@ -196,9 +217,14 @@ prepend_preloaders = [
 Then create an `init.lua` file in the same folder and add
 
 ```lua
--- DuckDB plugin configuration
-require("duckdb"):setup()
+-- Recommended secure defaults
+require("duckdb"):setup({
+  auto_install_extensions = false,
+  cache_enabled = true,
+})
 ```
+
+See [SECURITY.md](SECURITY.md) for the full threat model and [Configuration](#configurationcustomisation) for all options.
 
 This is where the configuration/settings can go ([see below](https://github.com/wylie102/duckdb.yazi?tab=readme-ov-file#configurationcustomisation)), but the
 init.lua file and this line are required for the plugin to run, even if the settings are blank. Another option is to add all the settings with the defaults
@@ -211,27 +237,29 @@ in so that it's easy to change at a later date.
 Then in your [keymap.toml](https://yazi-rs.github.io/docs/configuration/keymap) file add:
 
 ```toml
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = "H"
-run = "plugin duckdb -1"
+run = "plugin duckdb -- -1"
 desc = "Scroll one column to the left"
 
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = "L"
-run = "plugin duckdb +1"
+run = "plugin duckdb -- +1"
 desc = "Scroll one column to the right"
 
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = ["g", "o"]
-run = "plugin duckdb -open"
+run = "plugin duckdb -- -open"
 desc = "open with duckdb"
 
-[[manager.prepend_keymap]]
+[[mgr.prepend_keymap]]
 on = ["g", "u"]
-run = "plugin duckdb -ui"
+run = "plugin duckdb -- -ui"
 desc = "open with duckdb ui"
 
 ```
+
+> **Yazi 26.x:** Use `[[mgr.prepend_keymap]]` (Yazi 25.x used `[[manager.prepend_keymap]]`). Plugin arguments must be passed after `--` (e.g. `plugin duckdb -- -1`). On Yazi 25.x, `plugin duckdb -1` may still work.
 
 > I use `H` and `L` because it makes logical sense to me.
 >
@@ -250,9 +278,11 @@ desc = "open with duckdb ui"
 Use with a larger preview window – add to your `yazi.toml`
 
 ```toml
-[manager]
+[mgr]
 ratio = [1, 2, 5]
 ```
+
+> Yazi 25.x used `[manager]`; Yazi 26.x renamed this to `[mgr]` (older configs are auto-migrated on startup).
 
 For reference, the default ratio is 1, 4, 3
 
@@ -269,13 +299,14 @@ If you don't have one, you can just create one.
 Add the following:
 
 ```lua
-    -- DuckDB plugin configuration
 require("duckdb"):setup({
-  mode = "standard"/"summarized",            -- Default: "summarized"
-  cache_size = 1000,                         -- Default: 500
-  row_id = true/false/"dynamic",             -- Default: false
-  minmax_column_width = int,                 -- Default: 21
-  column_fit_factor = float,                 -- Default: 10.0
+  mode = "summarized",                       -- "standard" or "summarized"
+  cache_size = 500,                          -- rows cached in standard mode
+  cache_enabled = true,                      -- false to skip parquet caches (sensitive data)
+  auto_install_extensions = false,           -- true to download spatial/avro at preview time
+  row_id = false,                            -- true, false, or "dynamic"
+  minmax_column_width = 21,
+  column_fit_factor = 10,
 })
 ```
 
@@ -294,6 +325,12 @@ But the setup call `require("duckdb"):setup()` is still required for the plugin 
 - cache_size – the number of rows cached in the standard mode. Make the number higher if you want to be able to scroll further down in your files. Be aware this
   could impact cache size and cache performance if it was made too large. If you change this setting you will need to run `yazi --clear-cache` for it to take
   effect.
+
+- cache_enabled – when `false`, skips parquet cache generation and always reads from the source file. Use this when previewing sensitive data to avoid writing
+  copies under Yazi's cache directory. Default: `true`.
+
+- auto_install_extensions – when `false` (recommended), only runs `LOAD spatial` / `LOAD avro` and expects you to pre-install extensions. When `true`, runs
+  `INSTALL` before each preview (requires network access). Default: `false`.
 
 - row_id - displays a row column when viewing in standard mode. If set to dynamic, it will only turn on when scrolling columns and will always be the left most
   column.
@@ -318,8 +355,9 @@ But the setup call `require("duckdb"):setup()` is still required for the plugin 
 
 ### Configuring duckdb
 
-Configuration of DuckDB can be done in the `~/.duckdbrc` file.
-This should be placed in your home directory ([duckdb docs](https://duckdb.org/docs/stable/operations_manual/footprint_of_duckdb/files_created_by_duckdb)).
+Preview highlighting is configured in-plugin (`.highlight_results on`). Previews also use `duckdb -init /dev/null` so your `~/.duckdbrc` does not affect preview output.
+
+For **interactive** DuckDB sessions (`g` + `o` / `g` + `u`), configuration can be done in the `~/.duckdbrc` file in your home directory ([duckdb docs](https://duckdb.org/docs/stable/operations_manual/footprint_of_duckdb/files_created_by_duckdb)).
 
 You can customize the colors of the preview using the following options
 
@@ -337,7 +375,7 @@ The above configuration is what is used in the video at the top of the readme an
 Although the actual colors will depend on your terminal/yazi color scheme.
 These should be placed in your `~/.duckdbrc` file as is.
 No header is needed; they are simply commands to run on the startup of any duckdb instance (when using the CLI).
-These will change the color of the output in both duckdb.yazi and when using it in the CLI.
+These will change the color of the output when using DuckDB interactively or via `g` + `o` / `g` + `u`. Preview panes use built-in highlighting instead of `~/.duckdbrc`.
 
 Color options are:
 red|green|yellow|blue|magenta|cyan|white
@@ -356,6 +394,33 @@ In which case it will look like below.
 <img width="700" alt="Screenshot 2025-03-22 at 18 00 06" src="https://github.com/user-attachments/assets/db09fff9-2db1-4273-9ddf-34d0bf087967" />
 
 More information [here](https://duckdb.org/docs/stable/clients/cli/dot_commands#configuring-the-result-syntax-highlighter)
+
+<br><br>
+
+## Security
+
+Preview and preload operations spawn DuckDB with hardening enabled:
+
+- `duckdb -init /dev/null` — ignores `~/.duckdbrc` startup output (fixes preview breakage when a duckdbrc exists)
+- `SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem'` — blocks remote filesystem reads (local files still readable for preview)
+
+**Recommended defaults:** `auto_install_extensions = false` with extensions pre-installed (see [Installation](#pre-install-duckdb-extensions-recommended)).
+
+**Residual risks:**
+
+- DuckDB still reads local files you preview; treat untrusted data files (downloads, shared folders) as potentially hostile.
+- `.xlsx` and `.avro` require the `spatial` and `avro` extensions — pre-install them to avoid runtime downloads.
+- Preview caches write parquet copies under Yazi's cache directory. Set `cache_enabled = false` or run `yazi --clear-cache` after browsing sensitive data.
+- Opening files in DuckDB UI (`g` + `o` / `g` + `u`) launches a full interactive DuckDB session without preview hardening.
+
+See [SECURITY.md](SECURITY.md) for the full threat model and reporting instructions.
+
+### Maintenance scripts
+
+```sh
+./scripts/smoke-test.sh   # verify DuckDB integration (also run in CI)
+./scripts/check-cve.sh    # check OSV for DuckDB advisories (run monthly)
+```
 
 <br><br>
 
