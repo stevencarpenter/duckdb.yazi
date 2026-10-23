@@ -47,4 +47,4 @@ echo "=== Manual checks ==="
 echo "  DuckDB advisories: https://github.com/duckdb/duckdb/security/advisories"
 echo "  Yazi releases:     https://github.com/sxyazi/yazi/releases"
 echo
-echo "Minimum versions for this plugin: DuckDB >= 1.4.2, Yazi >= 25.4.8 (25.5.31+ recommended)"
+echo "Minimum versions for this plugin: DuckDB >= 1.5.0 (1.5.x or 2.x), Yazi >= 25.4.8 (25.5.31+ recommended)"

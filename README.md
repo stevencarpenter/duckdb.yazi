@@ -140,7 +140,7 @@ Supported file types:
 | Component | Minimum | Recommended | Why |
 |-----------|---------|-------------|-----|
 | [Yazi](https://yazi-rs.github.io/docs/installation) | 25.4.8 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
-| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.4.2 | 1.5.0+ | Fixes [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp); 1.5+ uses the modern lambda syntax this continuation targets |
+| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.5.0 | Latest 1.5.x or 2.x (tested with 1.5.6 and 2.0.0) | 1.x support covers only the final 1.x minor (1.5); includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix and the `lambda` syntax this continuation targets |
 
 Verify your versions:
 
@@ -433,6 +433,12 @@ See [SECURITY.md](SECURITY.md) for the full threat model and reporting instructi
 
 ## Setup and usage changes from previous versions
 
-### A Note on the Latest update
+See [CHANGELOG.md](CHANGELOG.md) for each release.
+
+### 1.0.0
+
+Requires DuckDB CLI 1.5.0 or later. Upgrade DuckDB before you run `ya pkg upgrade`.
+
+### `.avro` support and preview toggle
 
 Added logic for reading `.avro` files and added a toggle for preview mode between schema/summary statistics and full table preview. Make sure you are taking note of the new settings in the yazi.toml file as name has been replaced with url in that configuration. Nothing will work without it.

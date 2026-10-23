@@ -1,6 +1,6 @@
 --- @since 25.4.8
 -- DuckDB Plugin for Yazi
--- Requires DuckDB CLI >= 1.4.2 and Yazi >= 25.4.8 (Yazi >= 25.5.31 recommended).
+-- Requires DuckDB CLI >= 1.5.0 (1.5.x or 2.x) and Yazi >= 25.4.8 (Yazi >= 25.5.31 recommended).
 local M = {}
 
 local update_state = ya.sync(function(state, action, category, key, value)
@@ -13,8 +13,6 @@ local update_state = ya.sync(function(state, action, category, key, value)
         return state[category][key]
     elseif action == "check" then
         return state[category][key] ~= nil
-    elseif action == "clear" then
-        state[category] = {}
     else
         ya.err("Unknown action: " .. tostring(action))
     end
@@ -40,10 +38,6 @@ local function is_on_list(category, cache_str)
     return update_state("check", category, cache_str)
 end
 
-local function clear_list(category)
-    update_state("clear", category)
-end
-
 local function add_queries_to_table(target_table, queries)
     if type(queries) == "table" then
         for _, item in ipairs(queries) do
@@ -57,7 +51,9 @@ local function add_queries_to_table(target_table, queries)
 end
 
 local function command_with_args(program, args)
-    local cmd = Command(program)
+    -- DuckDB >= 2.0 switches to Markdown output and writes a notice to stderr when it
+    -- detects a coding agent (AI_AGENT, CLAUDECODE, ...). Older versions ignore this.
+    local cmd = Command(program):env("DUCKDB_AGENT_MODE", "0")
     for _, arg_value in ipairs(args) do
         cmd = cmd:arg(arg_value)
     end
@@ -113,7 +109,8 @@ local function generate_data_source_string(target, file_type)
     -- Escape single quotes in the path for SQL string literal
     local url_string = "'" .. tostring(target):gsub("'", "''") .. "'"
     if file_type == "excel" then
-        return string.format("st_read(%s)", url_string)
+        -- st_read adds GDAL's OGC_FID row id; read_xlsx is not used because it fails on mixed-type columns.
+        return string.format("(SELECT COLUMNS(lambda c: c <> 'OGC_FID') FROM st_read(%s))", url_string)
     elseif file_type == "avro" then
         return string.format("read_avro(%s)", url_string)
     elseif file_type == "text" then
@@ -373,7 +370,7 @@ local function get_cache_path(job, mode, extension)
     if extension then
         suffix = "_" .. extension .. "." .. extension
     end
-    local cache_version = 3
+    local cache_version = 4
     local skip = job.skip
     job.skip = 1000000 + cache_version
     local base = ya.file_cache(job)
@@ -441,6 +438,9 @@ local function generate_db_query(limit, offset)
     local visible_column_count = 10
     local max_scroll_metadata = #metadata_fields
     local metadata_projection = { "table_name" }
+    -- Tables with the same name can exist in several schemas; show the schema when it is not main.
+    local qualified_table_name =
+        "CASE WHEN t.schema_name = 'main' THEN t.table_name ELSE t.schema_name || '.' || t.table_name END"
 
     if scroll < max_scroll_metadata then
         for i = scroll + 1, #metadata_fields do
@@ -453,19 +453,20 @@ local function generate_db_query(limit, offset)
             [[
 WITH table_info AS (
   SELECT
-    DISTINCT t.table_name,
+    DISTINCT %s AS table_name,
     t.estimated_size AS rows,
     t.column_count AS columns,
     t.has_primary_key AS has_pk,
     t.index_count AS indexes,
-    STRING_AGG(c.column_name, ', ' ORDER BY c.column_index) OVER (PARTITION BY t.table_name) AS column_names
+    STRING_AGG(c.column_name, ', ' ORDER BY c.column_index) OVER (PARTITION BY t.table_oid) AS column_names
   FROM duckdb_tables() t
-  LEFT JOIN duckdb_columns() c ON t.table_name = c.table_name
+  LEFT JOIN duckdb_columns() c ON t.table_oid = c.table_oid
 )
 SELECT %s FROM table_info
 ORDER BY table_name
 LIMIT %d OFFSET %d;
 ]],
+            qualified_table_name,
             projection,
             limit,
             offset
@@ -479,14 +480,16 @@ LIMIT %d OFFSET %d;
             [[
 WITH raw AS (
   SELECT
-    t.table_name,
+    t.table_oid,
+    %s AS table_name,
     c.column_name,
-    row_number() OVER (PARTITION BY t.table_name ORDER BY c.column_index) AS col_pos
+    row_number() OVER (PARTITION BY t.table_oid ORDER BY c.column_index) AS col_pos
   FROM duckdb_tables() t
-  LEFT JOIN duckdb_columns() c ON t.table_name = c.table_name
+  LEFT JOIN duckdb_columns() c ON t.table_oid = c.table_oid
 ),
 scrolling AS (
   SELECT
+    table_oid,
     table_name,
     column_name,
     col_pos
@@ -498,12 +501,13 @@ aggregated AS (
     table_name,
     STRING_AGG(column_name, ', ' ORDER BY col_pos) AS column_names
   FROM scrolling
-  GROUP BY table_name
+  GROUP BY table_oid, table_name
 )
 SELECT table_name, column_names FROM aggregated
 ORDER BY table_name
 LIMIT %d OFFSET %d;
 ]],
+            qualified_table_name,
             start_pos,
             end_pos,
             limit,
@@ -535,7 +539,8 @@ set variable included_columns = (
     )
     select list(column_name)
     from column_list
-    where row > %d and row <= (%d)
+    -- Clamp the scroll so the last column stays visible; an empty COLUMNS() set is a binder error.
+    where row > least(%d, (select count(*) from column_list) - 1) and row <= (%d)
 );
 ]],
         target,
@@ -664,11 +669,11 @@ local function generate_peek_query(target, job, limit, offset, file_type, cache_
         '   %s ' as q25,
         '   %s ' as q50,
         '   %s ' as q75
-        from (describe select * from %s) d
+        from (select *, row_number() over () as pos from (describe select * from %s)) d
         left join parquet_metadata(%s) m
         on d.column_name = m.path_in_schema
         group by all
-        order by min(column_id))
+        order by min(d.pos))
         ]],
                 placeholder,
                 placeholder,
@@ -907,17 +912,25 @@ function M:peek(job)
             add_to_list("bad_cache", args.cache_str)
             remove_file(args.cache_url)
             return require("duckdb"):peek(job)
-        elseif is_on_list("bad_cache", args.cache_str) then
-            return require("code"):peek(job)
         end
+        return require("code"):peek(job)
     end
 
-    if args.target == args.file_url and args.mode == "summarized" and get_opts("cache_enabled") and not args.use_cache then
+    -- Only wait for a cache that preload can still build: DuckDB databases are never cached,
+    -- and preload skips a cache already marked bad.
+    local cache_pending = args.cache_url and args.file_type ~= "duckdb" and not is_on_list("bad_cache", args.cache_str)
+    if
+        args.target == args.file_url
+        and args.mode == "summarized"
+        and get_opts("cache_enabled")
+        and not args.use_cache
+        and cache_pending
+    then
         render_output(output, job)
         while not is_on_list("completed", args.cache_str) do
             ya.sleep(0.2)
         end
-        clear_list("completed")
+        remove_from_list("completed", args.cache_str)
         set_opts("re_peek", true)
         return require("duckdb"):peek(job)
     end

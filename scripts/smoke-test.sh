@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FIXTURE="${ROOT}/tests/fixtures/sample.csv"
-MIN_DUCKDB_VERSION="1.4.2"
+MIN_DUCKDB_VERSION="1.5.0"
 
 if ! command -v duckdb >/dev/null 2>&1; then
     echo "error: duckdb CLI not found on PATH" >&2
@@ -18,7 +18,9 @@ version_ge() {
     [[ "$lowest" == "$required" ]]
 }
 
-raw_version="$(duckdb --version 2>&1 | head -n1)"
+# -init /dev/null and DUCKDB_AGENT_MODE=0 keep ~/.duckdbrc output and the agent-mode
+# notice out of the pipe; extra lines make `head` exit early and pipefail report SIGPIPE.
+raw_version="$(DUCKDB_AGENT_MODE=0 duckdb -init /dev/null --version 2>&1 | head -n1)"
 installed_version="$(printf '%s' "$raw_version" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
 if [[ -z "$installed_version" ]]; then
     echo "error: could not parse DuckDB version from: ${raw_version}" >&2
@@ -47,4 +49,14 @@ duckdb -init /dev/null \
     >/dev/null
 
 echo "Lambda syntax OK"
+
+# DuckDB >= 2.0 agent mode writes to stderr, which the plugin treats as a failed preview.
+# The plugin sets DUCKDB_AGENT_MODE=0; check that it keeps stderr empty with an agent env var set.
+agent_stderr="$(AI_AGENT=smoke-test DUCKDB_AGENT_MODE=0 duckdb -init /dev/null -c ".mode duckbox" -c "SELECT 1;" 2>&1 >/dev/null)"
+if [[ -n "$agent_stderr" ]]; then
+    echo "error: unexpected stderr with DUCKDB_AGENT_MODE=0: ${agent_stderr}" >&2
+    exit 1
+fi
+
+echo "Agent mode disabled OK"
 echo "Smoke tests passed"
