@@ -140,7 +140,7 @@ Supported file types:
 | Component | Minimum | Recommended | Why |
 |-----------|---------|-------------|-----|
 | [Yazi](https://yazi-rs.github.io/docs/installation) | 25.4.8 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
-| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.4.2 | 1.5.0+ | Fixes [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp); 1.5+ uses the modern lambda syntax this continuation targets |
+| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.5.0 | Latest 1.5.x or 2.x (tested with 1.5.6 and 2.0.0) | 1.x support covers only the final 1.x minor (1.5); includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix and the `lambda` syntax this continuation targets |
 
 Verify your versions:
 

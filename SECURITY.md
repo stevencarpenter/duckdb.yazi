@@ -9,7 +9,7 @@
 
 Minimum runtime versions:
 
-- **DuckDB CLI** ≥ 1.4.2 (fixes [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp))
+- **DuckDB CLI** ≥ 1.5.0 (1.5.x or 2.x; includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix)
 - **Yazi** ≥ 25.4.8 (≥ 25.5.31 recommended for transitive dependency fixes)
 
 ## Reporting a vulnerability
@@ -74,7 +74,7 @@ duckdb -c "INSTALL spatial; LOAD spatial; INSTALL avro; LOAD avro;"
 
 ## Security checklist
 
-- [ ] DuckDB ≥ 1.4.2 (`duckdb --version`)
+- [ ] DuckDB ≥ 1.5.0 (`duckdb --version`)
 - [ ] Yazi ≥ 25.5.31 (`yazi --version`)
 - [ ] `auto_install_extensions = false` in `init.lua`
 - [ ] Extensions pre-installed (if using `.xlsx` / `.avro`)
