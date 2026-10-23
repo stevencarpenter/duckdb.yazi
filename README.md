@@ -433,6 +433,12 @@ See [SECURITY.md](SECURITY.md) for the full threat model and reporting instructi
 
 ## Setup and usage changes from previous versions
 
-### A Note on the Latest update
+See [CHANGELOG.md](CHANGELOG.md) for each release.
+
+### 1.0.0
+
+Requires DuckDB CLI 1.5.0 or later. Upgrade DuckDB before you run `ya pkg upgrade`.
+
+### `.avro` support and preview toggle
 
 Added logic for reading `.avro` files and added a toggle for preview mode between schema/summary statistics and full table preview. Make sure you are taking note of the new settings in the yazi.toml file as name has been replaced with url in that configuration. Nothing will work without it.

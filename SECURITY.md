@@ -4,7 +4,7 @@
 
 | Version | Supported |
 |---------|-----------|
-| `main` branch of [stevencarpenter/duckdb.yazi](https://github.com/stevencarpenter/duckdb.yazi) | Yes |
+| Latest release and `main` branch of [stevencarpenter/duckdb.yazi](https://github.com/stevencarpenter/duckdb.yazi) | Yes |
 | Original [wylie102/duckdb.yazi](https://github.com/wylie102/duckdb.yazi) | Unmaintained (last update May 2025) |
 
 Minimum runtime versions:
