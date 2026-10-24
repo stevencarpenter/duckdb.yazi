@@ -68,9 +68,12 @@ local function add_duckdb_security_queries(args)
     -- breaks preview of local data files. Remote filesystems are disabled instead.
     -- Names must match FileSystem::GetName() exactly; DuckDB accepts unknown names silently.
     -- S3FileSystem also serves gs:// and r2://.
+    -- scripts/smoke-test.sh reads this statement with sed, so it must stay on one line.
+    -- luacheck: push no max line length
     add_queries_to_table(args, {
         "SET disabled_filesystems = 'HTTPFileSystem,S3FileSystem,HuggingFaceFileSystem,AzureBlobStorageFileSystem,AzureDfsStorageFileSystem';",
     })
+    -- luacheck: pop
     -- Autoinstall downloads an extension over its own HTTP client, so disabled_filesystems
     -- does not stop it. A view in a previewed .duckdb file can trigger it.
     if not get_opts("auto_install_extensions") then
