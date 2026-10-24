@@ -3,6 +3,23 @@
 This project uses [Semantic Versioning](https://semver.org/). A change to the minimum
 DuckDB or Yazi version is a breaking change.
 
+## [1.0.1] - 2026-10-23
+
+### Security
+
+- Preview hardening named filesystems that do not exist (`HttpFileSystem`, `GcsFileSystem`,
+  `AzureFileSystem`), and DuckDB ignores unknown names. HTTP(S), Hugging Face and Azure reads
+  were not blocked. The list now uses `HTTPFileSystem`, `S3FileSystem` (also gs:// and r2://),
+  `HuggingFaceFileSystem`, `AzureBlobStorageFileSystem` and `AzureDfsStorageFileSystem`. The
+  smoke test checks that each remote scheme is refused.
+- With `auto_install_extensions = false`, previews set `autoinstall_known_extensions = false`,
+  so a previewed file cannot make DuckDB download an extension.
+
+### Fixed
+
+- Column scroll (`H`/`L`) works on a freshly hovered file. Before, the first press reset the
+  column offset to 0.
+
 ## [1.0.0] - 2026-10-23
 
 First tagged release.
@@ -29,4 +46,5 @@ First tagged release.
   caches are rebuilt.
 - Parquet placeholder summary keeps a stable column order on DuckDB 2.0.
 
+[1.0.1]: https://github.com/stevencarpenter/duckdb.yazi/releases/tag/v1.0.1
 [1.0.0]: https://github.com/stevencarpenter/duckdb.yazi/releases/tag/v1.0.0

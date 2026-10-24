@@ -63,9 +63,16 @@ end
 local function add_duckdb_security_queries(args)
     -- Do not set enable_external_access=false: it blocks LocalFileSystem reads and
     -- breaks preview of local data files. Remote filesystems are disabled instead.
+    -- Names must match FileSystem::GetName() exactly; DuckDB accepts unknown names silently.
+    -- S3FileSystem also serves gs:// and r2://.
     add_queries_to_table(args, {
-        "SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem';",
+        "SET disabled_filesystems = 'HTTPFileSystem,S3FileSystem,HuggingFaceFileSystem,AzureBlobStorageFileSystem,AzureDfsStorageFileSystem';",
     })
+    -- Autoinstall downloads an extension over its own HTTP client, so disabled_filesystems
+    -- does not stop it. A view in a previewed .duckdb file can trigger it.
+    if not get_opts("auto_install_extensions") then
+        add_queries_to_table(args, { "SET autoinstall_known_extensions = false;" })
+    end
 end
 
 local function duckdb_null_init_path()
@@ -154,6 +161,10 @@ local get_hovered_url_string = ya.sync(function()
     return tostring(cx.active.current.hovered.url)
 end)
 
+local get_preview_skip = ya.sync(function()
+    return cx.active.preview.skip
+end)
+
 local function toggle_preview_mode(target_url)
     local mode = get_opts("mode")
     local new_mode = (mode == "summarized") and "standard" or "summarized"
@@ -237,7 +248,9 @@ function M:entry(job)
     scrolled_columns = math.max(0, scrolled_columns + scroll_delta)
     set_opts("scrolled_columns", scrolled_columns)
 
-    ya.emit("peek", { force = true })
+    -- A peek at skip 0 means a fresh hover and resets scrolled_columns, so keep the
+    -- row offset but never send less than the 50 base.
+    ya.emit("peek", { math.max(50, get_preview_skip()), force = true })
 end
 
 -- Setup from init.lua:

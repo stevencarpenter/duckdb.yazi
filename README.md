@@ -336,7 +336,7 @@ But the setup call `require("duckdb"):setup()` is still required for the plugin 
 - cache_enabled – when `false`, skips parquet cache generation and always reads from the source file. Use this when previewing sensitive data to avoid writing
   copies under Yazi's cache directory. Default: `true`.
 
-- auto_install_extensions – when `false` (recommended), only runs `LOAD spatial` / `LOAD avro` and expects you to pre-install extensions. When `true`, runs
+- auto_install_extensions – when `false` (recommended), only runs `LOAD spatial` / `LOAD avro` and expects you to pre-install extensions. It also sets `autoinstall_known_extensions = false`. When `true`, runs
   `INSTALL` before each preview (requires network access). Default: `false`.
 
 - row_id - displays a row column when viewing in standard mode. If set to dynamic, it will only turn on when scrolling columns and will always be the left most
@@ -409,7 +409,8 @@ More information [here](https://duckdb.org/docs/stable/clients/cli/dot_commands#
 Preview and preload operations spawn DuckDB with hardening enabled:
 
 - `duckdb -init /dev/null` — ignores `~/.duckdbrc` startup output (fixes preview breakage when a duckdbrc exists)
-- `SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem'` — blocks remote filesystem reads (local files still readable for preview)
+- `SET disabled_filesystems = 'HTTPFileSystem,S3FileSystem,HuggingFaceFileSystem,AzureBlobStorageFileSystem,AzureDfsStorageFileSystem'` — blocks http(s), s3, gs, r2, hf and Azure reads (local files still readable for preview)
+- `SET autoinstall_known_extensions = false` unless `auto_install_extensions = true` — a previewed file cannot make DuckDB download an extension
 
 **Recommended defaults:** `auto_install_extensions = false` with extensions pre-installed (see [Installation](#pre-install-duckdb-extensions-recommended)).
 
