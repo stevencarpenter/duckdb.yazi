@@ -434,6 +434,10 @@ lua tests/peek_test.lua   # run the plugin against DuckDB with Yazi stand-ins (a
 
 See [CHANGELOG.md](CHANGELOG.md) for each release.
 
+### 2.0.0
+
+Requires Yazi 25.5.28 or later. Upgrade Yazi before you run `ya pkg upgrade`.
+
 ### 1.0.0
 
 Requires DuckDB CLI 1.5.0 or later. Upgrade DuckDB before you run `ya pkg upgrade`.

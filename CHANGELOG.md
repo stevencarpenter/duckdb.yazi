@@ -3,7 +3,13 @@
 This project uses [Semantic Versioning](https://semver.org/). A change to the minimum
 DuckDB or Yazi version is a breaking change.
 
-## [Unreleased]
+## [2.0.0] - 2026-10-23
+
+### Breaking
+
+- Require Yazi 25.5.28 or later. The plugin already needed it, because it uses `ya.emit` and
+  `ya.preview_widget`, which Yazi added in 25.5.28. The docs said 25.4.8, but Yazi 25.4.8 to
+  25.5.27 could not run the plugin.
 
 ### Security
 
@@ -32,8 +38,6 @@ DuckDB or Yazi version is a breaking change.
 - An empty `.duckdb` file no longer shows a stray `NULL` line.
 - A tabular `.txt` file is checked for plain text once, not on every scroll step. A failed
   check is tried again on the next peek instead of being remembered.
-- The documented minimum Yazi version is now 25.5.28. The plugin already needed it, because it
-  uses `ya.emit` and `ya.preview_widget`, so Yazi 25.4.8 to 25.5.27 could not run it.
 - `scripts/check-cve.sh` runs (it had a missing `}`) and lists advisories newest first.
 
 ### Removed
@@ -72,4 +76,5 @@ First tagged release.
   caches are rebuilt.
 - Parquet placeholder summary keeps a stable column order on DuckDB 2.0.
 
+[2.0.0]: https://github.com/stevencarpenter/duckdb.yazi/releases/tag/v2.0.0
 [1.0.0]: https://github.com/stevencarpenter/duckdb.yazi/releases/tag/v1.0.0
