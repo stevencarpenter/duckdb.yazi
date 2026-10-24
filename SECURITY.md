@@ -10,7 +10,7 @@
 Minimum runtime versions:
 
 - **DuckDB CLI** ≥ 1.5.0 (1.5.x or 2.x; includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix)
-- **Yazi** ≥ 25.4.8 (≥ 25.5.31 recommended for transitive dependency fixes)
+- **Yazi** ≥ 25.5.28 (≥ 25.5.31 recommended for transitive dependency fixes)
 
 ## Reporting a vulnerability
 
@@ -43,7 +43,8 @@ Please do **not** file public issues for exploitable vulnerabilities until a fix
 Preview spawns use:
 
 - `duckdb -init /dev/null` (or `NUL` on Windows) to ignore `~/.duckdbrc` startup output
-- `SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem'` to block remote filesystem reads
+- `SET disabled_filesystems = 'HTTPFileSystem,S3FileSystem,HuggingFaceFileSystem,AzureBlobStorageFileSystem,AzureDfsStorageFileSystem'` to block http(s), s3, gs, r2, hf and Azure reads. DuckDB accepts an unknown name without error, so `scripts/smoke-test.sh` checks that each scheme is refused
+- `SET autoinstall_known_extensions = false` unless `auto_install_extensions = true`. Extension autoinstall uses its own HTTP client, so `disabled_filesystems` does not block it
 
 Note: `enable_external_access = false` is intentionally **not** set because it also blocks reading local preview files.
 

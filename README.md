@@ -131,6 +131,8 @@ Supported file types:
   generated, summarized mode may take longer to show as it will be run on the original file, and scrolling other files during this time (especially large
   ones) can slow things even further as new queries on the file will be competing with cached queries. Instead, it is worth waiting until the caches load (displayed in bottom right corner) or switching to standard view during these first few seconds. This will be most noticeable on large, non-parquet files
 
+- If no preload starts for a file within 30 seconds (for example, when no `prepend_preloaders` rule matches it), summarized mode stops waiting and keeps the `⏱` placeholders. Hover the file again after its cache is built.
+
 <br><br>
 
 ## Installation
@@ -139,8 +141,8 @@ Supported file types:
 
 | Component | Minimum | Recommended | Why |
 |-----------|---------|-------------|-----|
-| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.4.8 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
-| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.5.0 | Latest 1.5.x or 2.x (tested with 1.5.6 and 2.0.0) | 1.x support covers only the final 1.x minor (1.5); includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix and the `lambda` syntax this continuation targets |
+| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.5.28 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
+| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.5.0 | Latest 1.5.x or 2.x (CI tests 1.5.0, 1.5.6 and 2.0.0) | 1.x support covers only the final 1.x minor (1.5); includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix and the `lambda` syntax this continuation targets |
 
 Verify your versions:
 
@@ -185,7 +187,6 @@ prepend_previewers = [
     { url = "*.tsv", run = "duckdb" },
     { url = "*.json", run = "duckdb" },
     { url = "*.parquet", run = "duckdb" },
-    { mime = "application/x-parquet", run = "duckdb" },
     { url = "*.avro", run = "duckdb" },
     { url = "*.txt", run = "duckdb" },
     { url = "*.xlsx", run = "duckdb" },
@@ -203,10 +204,6 @@ prepend_preloaders = [
     { url = "*.xlsx", run = "duckdb", multi = false }
 ]
 ```
-
-> The `mime = "application/x-parquet"` entry previews parquet files that lack a `.parquet` extension.
-
-<br>
 
 > Note on .txt: I have tried to exclude files that contain only raw text (if duckdb reads only one column). However, if you don't ever work with .txt files
 > which contain tabular data (basically misnamed csv or tsv files), then you can just not include the .txt lines in your setup.
@@ -336,7 +333,7 @@ But the setup call `require("duckdb"):setup()` is still required for the plugin 
 - cache_enabled – when `false`, skips parquet cache generation and always reads from the source file. Use this when previewing sensitive data to avoid writing
   copies under Yazi's cache directory. Default: `true`.
 
-- auto_install_extensions – when `false` (recommended), only runs `LOAD spatial` / `LOAD avro` and expects you to pre-install extensions. When `true`, runs
+- auto_install_extensions – when `false` (recommended), only runs `LOAD spatial` / `LOAD avro` and expects you to pre-install extensions. It also sets `autoinstall_known_extensions = false`. When `true`, runs
   `INSTALL` before each preview (requires network access). Default: `false`.
 
 - row_id - displays a row column when viewing in standard mode. If set to dynamic, it will only turn on when scrolling columns and will always be the left most
@@ -409,7 +406,8 @@ More information [here](https://duckdb.org/docs/stable/clients/cli/dot_commands#
 Preview and preload operations spawn DuckDB with hardening enabled:
 
 - `duckdb -init /dev/null` — ignores `~/.duckdbrc` startup output (fixes preview breakage when a duckdbrc exists)
-- `SET disabled_filesystems = 'HttpFileSystem,S3FileSystem,GcsFileSystem,AzureFileSystem'` — blocks remote filesystem reads (local files still readable for preview)
+- `SET disabled_filesystems = 'HTTPFileSystem,S3FileSystem,HuggingFaceFileSystem,AzureBlobStorageFileSystem,AzureDfsStorageFileSystem'` — blocks http(s), s3, gs, r2, hf and Azure reads (local files still readable for preview)
+- `SET autoinstall_known_extensions = false` unless `auto_install_extensions = true` — a previewed file cannot make DuckDB download an extension
 
 **Recommended defaults:** `auto_install_extensions = false` with extensions pre-installed (see [Installation](#pre-install-duckdb-extensions-recommended)).
 
@@ -426,6 +424,7 @@ See [SECURITY.md](SECURITY.md) for the full threat model and reporting instructi
 
 ```sh
 ./scripts/smoke-test.sh   # verify DuckDB integration (also run in CI)
+lua tests/peek_test.lua   # run the plugin against DuckDB with Yazi stand-ins (also run in CI)
 ./scripts/check-cve.sh    # check OSV for DuckDB advisories (run monthly)
 ```
 
@@ -434,6 +433,10 @@ See [SECURITY.md](SECURITY.md) for the full threat model and reporting instructi
 ## Setup and usage changes from previous versions
 
 See [CHANGELOG.md](CHANGELOG.md) for each release.
+
+### 2.0.0
+
+Requires Yazi 25.5.28 or later. Upgrade Yazi before you run `ya pkg upgrade`.
 
 ### 1.0.0
 

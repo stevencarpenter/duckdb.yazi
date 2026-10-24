@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Queries the OSV API for recent DuckDB and Yazi advisories.
+# Queries the OSV API for DuckDB advisories and prints the local DuckDB and Yazi versions.
+# OSV has no Yazi package; check Yazi releases by hand (link printed below).
 # Run monthly or before upgrading DuckDB/Yazi.
 
 query_osv() {
@@ -13,17 +14,20 @@ query_osv() {
         | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
-vulns = data.get('vulns', [])
+# OSV does not order results, so show the newest first.
+vulns = sorted(data.get('vulns', []), key=lambda v: v.get('published', ''), reverse=True)
 if not vulns:
     print('  No advisories returned by OSV.')
     sys.exit(0)
 for v in vulns[:10]:
     vid = v.get('id', 'unknown')
+    published = v.get('published', '')[:10]
     summary = (v.get('summary') or '')[:120]
-    print(f'  - {vid}: {summary}')
+    print(f'  - {published} {vid}: {summary}')
 if len(vulns) > 10:
     print(f'  ... and {len(vulns) - 10} more')
 "
+}
 
 echo "=== Local versions ==="
 if command -v duckdb >/dev/null 2>&1; then
@@ -47,4 +51,4 @@ echo "=== Manual checks ==="
 echo "  DuckDB advisories: https://github.com/duckdb/duckdb/security/advisories"
 echo "  Yazi releases:     https://github.com/sxyazi/yazi/releases"
 echo
-echo "Minimum versions for this plugin: DuckDB >= 1.5.0 (1.5.x or 2.x), Yazi >= 25.4.8 (25.5.31+ recommended)"
+echo "Minimum versions for this plugin: DuckDB >= 1.5.0 (1.5.x or 2.x), Yazi >= 25.5.28 (25.5.31+ recommended)"
