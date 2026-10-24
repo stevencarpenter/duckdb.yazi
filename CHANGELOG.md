@@ -3,6 +3,27 @@
 This project uses [Semantic Versioning](https://semver.org/). A change to the minimum
 DuckDB or Yazi version is a breaking change.
 
+## [Unreleased]
+
+### Fixed
+
+- `g o` / `g u` open DuckDB again. The opener ran `Command` in a sync block, which Yazi
+  does not allow, and passed its queries with `-c`, which makes DuckDB exit after them. It
+  now uses `-cmd` and hides Yazi while DuckDB runs.
+- Summarized mode with `cache_enabled = false` shows statistics instead of `⏱` placeholders.
+- Summarized peek stops waiting for a cache when no preload starts within 30 s. Before, a
+  previewer rule without a matching preloader rule waited forever.
+- A failed cached preview keeps the current row instead of jumping to the top.
+- A preview pane of 6 rows or fewer no longer marks a valid cache as bad.
+- Column scroll stops counting at the last column, so `H` moves left on the first press.
+- A tabular `.txt` file is checked for plain text once, not on every scroll step.
+- `scripts/check-cve.sh` runs (it had a missing `}`) and lists advisories newest first.
+
+### Removed
+
+- The README `mime = "application/x-parquet"` previewer rule. The plugin detects file types
+  only by extension, so the rule showed the code previewer.
+
 ## [1.0.1] - 2026-10-23
 
 ### Security

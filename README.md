@@ -185,7 +185,6 @@ prepend_previewers = [
     { url = "*.tsv", run = "duckdb" },
     { url = "*.json", run = "duckdb" },
     { url = "*.parquet", run = "duckdb" },
-    { mime = "application/x-parquet", run = "duckdb" },
     { url = "*.avro", run = "duckdb" },
     { url = "*.txt", run = "duckdb" },
     { url = "*.xlsx", run = "duckdb" },
@@ -203,10 +202,6 @@ prepend_preloaders = [
     { url = "*.xlsx", run = "duckdb", multi = false }
 ]
 ```
-
-> The `mime = "application/x-parquet"` entry previews parquet files that lack a `.parquet` extension.
-
-<br>
 
 > Note on .txt: I have tried to exclude files that contain only raw text (if duckdb reads only one column). However, if you don't ever work with .txt files
 > which contain tabular data (basically misnamed csv or tsv files), then you can just not include the .txt lines in your setup.

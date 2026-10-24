@@ -13,17 +13,20 @@ query_osv() {
         | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
-vulns = data.get('vulns', [])
+# OSV does not order results, so show the newest first.
+vulns = sorted(data.get('vulns', []), key=lambda v: v.get('published', ''), reverse=True)
 if not vulns:
     print('  No advisories returned by OSV.')
     sys.exit(0)
 for v in vulns[:10]:
     vid = v.get('id', 'unknown')
+    published = v.get('published', '')[:10]
     summary = (v.get('summary') or '')[:120]
-    print(f'  - {vid}: {summary}')
+    print(f'  - {published} {vid}: {summary}')
 if len(vulns) > 10:
     print(f'  ... and {len(vulns) - 10} more')
 "
+}
 
 echo "=== Local versions ==="
 if command -v duckdb >/dev/null 2>&1; then

@@ -2,21 +2,26 @@ name: CI
 
 on:
   push:
-    branches: [main, "cursor/**"]
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install Lua and Luacheck
-        uses: leafo/gh-actions-lua@v13
+        uses: leafo/gh-actions-lua@32909a2dea0a48c433aec79e7fcd31b4cd55800f # v13.1.0
         with:
           luaVersion: "5.4"
 
-      - uses: leafo/gh-actions-luarocks@v6
+      - uses: leafo/gh-actions-luarocks@1c4a92caecc8f6850f673cbadfd57b3e555417ce # v6.1.1
 
       - name: Run luacheck
         run: |
@@ -34,7 +39,9 @@ jobs:
           - version: "2.0.0"
             asset: duckdb-cli-linux-amd64.tar.gz
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install DuckDB CLI ${{ matrix.version }}
         run: |
@@ -49,3 +56,11 @@ jobs:
 
       - name: Run smoke tests
         run: ./scripts/smoke-test.sh
+
+      - name: Install Lua
+        uses: leafo/gh-actions-lua@32909a2dea0a48c433aec79e7fcd31b4cd55800f # v13.1.0
+        with:
+          luaVersion: "5.4"
+
+      - name: Run peek tests
+        run: lua tests/peek_test.lua
