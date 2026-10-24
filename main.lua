@@ -1,6 +1,6 @@
---- @since 25.4.8
+--- @since 25.5.28
 -- DuckDB Plugin for Yazi
--- Requires DuckDB CLI >= 1.5.0 (1.5.x or 2.x) and Yazi >= 25.4.8 (Yazi >= 25.5.31 recommended).
+-- Requires DuckDB CLI >= 1.5.0 (1.5.x or 2.x) and Yazi >= 25.5.28 (Yazi >= 25.5.31 recommended).
 local M = {}
 
 -- Preview skip is stored as row offset + OFFSET_BASE, so a scroll above row 0 can toggle the mode.
@@ -215,7 +215,7 @@ local function duckdb_opener(arg)
         table.insert(args, "-ui")
     end
 
-    -- Give the terminal to DuckDB until it exits. Yazi < 25.5.28 names this ya.hide.
+    -- Give the terminal to DuckDB until it exits. Yazi < 25.12.29 names this ya.hide.
     local permit = (ui.hide or ya.hide)()
     local child, err = command_with_args("duckdb", args):stdin(Command.INHERIT):stdout(Command.INHERIT)
         :stderr(Command.INHERIT):spawn()
@@ -515,7 +515,9 @@ LIMIT %d OFFSET %d;
         )
     end
     -- The last scroll position shows the last column of the widest table.
-    local max_scroll = string.format("select max(column_count) + %d from duckdb_tables()", max_scroll_metadata - 1)
+    -- coalesce: a database with no tables gives NULL, which .mode list prints as a "NULL" line.
+    local max_scroll =
+        string.format("select coalesce(max(column_count), 1) + %d from duckdb_tables()", max_scroll_metadata - 1)
     return with_max_scroll({ query }, max_scroll)
 end
 
@@ -817,8 +819,9 @@ local function is_plain_text(job, file_type)
     end
 
     -- Remember both answers, so a tabular .txt file is not sniffed again on every scroll.
+    -- file_hash is nil for a file inside Yazi's cache directory; that file is not remembered.
     local file_hash, _ = get_cache_path(job, "standard", "text")
-    local known = update_state("get", "is_plain_text", file_hash)
+    local known = file_hash and update_state("get", "is_plain_text", file_hash)
     if known ~= nil then
         return known
     end
@@ -830,8 +833,14 @@ local function is_plain_text(job, file_type)
         string.format("select count(column_name) from (describe from read_csv('%s'));", escaped_url),
     }
     local output = run_query(job, query, nil, file_type)
-    local result = output ~= nil and output.stdout == "1\r\n"
-    update_state("set", "is_plain_text", file_hash, result)
+    if not output then
+        -- A failed check is not an answer; try again on the next peek.
+        return false
+    end
+    local result = output.stdout == "1\r\n"
+    if file_hash then
+        update_state("set", "is_plain_text", file_hash, result)
+    end
     return result
 end
 
@@ -901,7 +910,11 @@ function M:peek(job)
         stdout = table_text
         max_scroll = math.max(0, tonumber(max_scroll))
         if (get_opts("scrolled_columns") or 0) > max_scroll then
+            -- This query ran past the last column (the db view then shows no columns), so run it
+            -- again at the last column. The clamp makes the second run stop here.
             set_opts("scrolled_columns", max_scroll)
+            set_opts("re_peek", true)
+            return require("duckdb"):peek(job)
         end
     end
 

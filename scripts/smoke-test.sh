@@ -51,10 +51,12 @@ duckdb -init /dev/null \
 echo "Security-hardened CSV read OK"
 
 # DuckDB accepts an unknown filesystem name without error, so check that each remote
-# scheme is refused. httpfs must be loaded for the HTTP, S3 and Hugging Face filesystems to exist.
-DUCKDB_AGENT_MODE=0 duckdb -init /dev/null -c "INSTALL httpfs;" >/dev/null
-for url in "https://example.com/a.csv" "s3://bucket/a.csv" "gs://bucket/a.csv" "hf://datasets/x/y/a.csv"; do
-    remote_err="$(DUCKDB_AGENT_MODE=0 duckdb -init /dev/null -c "LOAD httpfs;" -c "$disable_fs_sql" \
+# scheme is refused. httpfs registers the HTTP, S3 (also gs:// and r2://) and Hugging Face
+# filesystems; azure registers the two Azure filesystems. Both must be loaded for the names to exist.
+DUCKDB_AGENT_MODE=0 duckdb -init /dev/null -c "INSTALL httpfs;" -c "INSTALL azure;" >/dev/null
+for url in "https://example.com/a.csv" "s3://bucket/a.csv" "gs://bucket/a.csv" "r2://bucket/a.csv" \
+    "hf://datasets/x/y/a.csv" "az://container/a.csv" "abfss://container@account.dfs.core.windows.net/a.csv"; do
+    remote_err="$(DUCKDB_AGENT_MODE=0 duckdb -init /dev/null -c "LOAD httpfs;" -c "LOAD azure;" -c "$disable_fs_sql" \
         -c "SELECT * FROM read_csv('${url}');" 2>&1 >/dev/null || true)"
     if [[ "$remote_err" != *"has been disabled by configuration"* ]]; then
         echo "error: ${url} was not blocked: ${remote_err}" >&2

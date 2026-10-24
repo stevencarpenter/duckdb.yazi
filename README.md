@@ -131,6 +131,8 @@ Supported file types:
   generated, summarized mode may take longer to show as it will be run on the original file, and scrolling other files during this time (especially large
   ones) can slow things even further as new queries on the file will be competing with cached queries. Instead, it is worth waiting until the caches load (displayed in bottom right corner) or switching to standard view during these first few seconds. This will be most noticeable on large, non-parquet files
 
+- If no preload starts for a file within 30 seconds (for example, when no `prepend_preloaders` rule matches it), summarized mode stops waiting and keeps the `⏱` placeholders. Hover the file again after its cache is built.
+
 <br><br>
 
 ## Installation
@@ -139,8 +141,8 @@ Supported file types:
 
 | Component | Minimum | Recommended | Why |
 |-----------|---------|-------------|-----|
-| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.4.8 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
-| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.5.0 | Latest 1.5.x or 2.x (tested with 1.5.6 and 2.0.0) | 1.x support covers only the final 1.x minor (1.5); includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix and the `lambda` syntax this continuation targets |
+| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.5.28 | 25.5.31+ | Plugin API compatibility; newer builds include security fixes in transitive dependencies |
+| [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.5.0 | Latest 1.5.x or 2.x (CI tests 1.5.0, 1.5.6 and 2.0.0) | 1.x support covers only the final 1.x minor (1.5); includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix and the `lambda` syntax this continuation targets |
 
 Verify your versions:
 
@@ -422,6 +424,7 @@ See [SECURITY.md](SECURITY.md) for the full threat model and reporting instructi
 
 ```sh
 ./scripts/smoke-test.sh   # verify DuckDB integration (also run in CI)
+lua tests/peek_test.lua   # run the plugin against DuckDB with Yazi stand-ins (also run in CI)
 ./scripts/check-cve.sh    # check OSV for DuckDB advisories (run monthly)
 ```
 

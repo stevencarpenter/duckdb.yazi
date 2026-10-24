@@ -10,7 +10,7 @@
 Minimum runtime versions:
 
 - **DuckDB CLI** ≥ 1.5.0 (1.5.x or 2.x; includes the [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) fix)
-- **Yazi** ≥ 25.4.8 (≥ 25.5.31 recommended for transitive dependency fixes)
+- **Yazi** ≥ 25.5.28 (≥ 25.5.31 recommended for transitive dependency fixes)
 
 ## Reporting a vulnerability
 

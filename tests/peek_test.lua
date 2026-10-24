@@ -1,13 +1,21 @@
 -- Runs main.lua's peek, preload and entry against the real DuckDB CLI, with stand-ins for the Yazi API.
--- Usage: lua tests/peek_test.lua (from the repository root, with duckdb on PATH)
+-- Usage: lua tests/peek_test.lua (from any directory, with duckdb on PATH)
 
-local ROOT = arg[0]:match("^(.*)/tests/[^/]+$") or "."
-local TMP = io.popen("mktemp -d"):read("l")
+-- The repository root is the parent of this script's directory.
+local ROOT = (arg[0]:match("^(.*)/[^/]+$") or ".") .. "/.."
+local TMP = assert(io.popen("mktemp -d"):read("l"), "mktemp -d failed")
 local FIXTURE = ROOT .. "/tests/fixtures/sample.csv"
 
 local function sh_quote(s)
     return "'" .. tostring(s):gsub("'", "'\\''") .. "'"
 end
+
+-- Removes TMP when the Lua state closes: at the end, on os.exit(_, true), and after an uncaught error.
+local _cleanup = setmetatable({}, {
+    __gc = function()
+        os.execute("rm -rf " .. sh_quote(TMP))
+    end,
+})
 
 local function duckdb(sql, db)
     local target = db and sh_quote(db) or ""
@@ -24,6 +32,7 @@ end
 
 local state, widgets, events = {}, {}, {}
 local runs, sleeps = 0, 0
+local on_sleep -- optional function(sleeps), runs at each ya.sleep call
 
 local UrlMT = {}
 UrlMT.__index = UrlMT
@@ -62,6 +71,9 @@ ya = {
     sleep = function(_)
         sleeps = sleeps + 1
         assert(sleeps < 1000, "peek waited without limit")
+        if on_sleep then
+            on_sleep(sleeps)
+        end
     end,
 }
 ui = {
@@ -112,17 +124,20 @@ function Cmd:arg(a)
     table.insert(self.args, a)
     return self
 end
-function Cmd:stdin()
+function Cmd:stdin(mode)
+    self.stdin_mode = mode
     return self
 end
-function Cmd:stdout()
+function Cmd:stdout(mode)
+    self.stdout_mode = mode
     return self
 end
-function Cmd:stderr()
+function Cmd:stderr(mode)
+    self.stderr_mode = mode
     return self
 end
 function Cmd:spawn()
-    table.insert(events, { cmd = "spawn", args = self.args })
+    table.insert(events, { cmd = "spawn", args = self.args, cmd_object = self })
     return self
 end
 function Cmd:wait() end
@@ -162,9 +177,17 @@ local function reset(opts)
     for k in pairs(state) do
         state[k] = nil
     end
-    widgets, events, runs, sleeps, code_peeks = {}, {}, 0, 0, 0
+    widgets, events, runs, sleeps, code_peeks, on_sleep = {}, {}, 0, 0, 0, nil
     os.execute("rm -f " .. sh_quote(TMP) .. "/cache-*")
     M:setup(opts)
+end
+
+local function cache_files(pattern)
+    local files = {}
+    for path in io.popen("ls " .. sh_quote(TMP) .. "/" .. pattern .. " 2>/dev/null"):lines() do
+        table.insert(files, path)
+    end
+    return files
 end
 
 local function last_widget()
@@ -189,6 +212,10 @@ local TABLE_TXT = TMP .. "/table.txt"
 write(TABLE_TXT, "id,name,value\n1,alice,10\n2,bob,20\n")
 local PLAIN_TXT = TMP .. "/notes.txt"
 write(PLAIN_TXT, "hello world\nthis is text\n")
+local EMPTY_DB = TMP .. "/empty.duckdb"
+duckdb("select 1;", EMPTY_DB)
+-- Name of the summarized cache that main.lua's get_cache_path builds with the ya.file_cache stand-in.
+local SUMMARIZED_CACHE = "cache-sample.csv-1000004_summarized.parquet"
 
 -- Tests -------------------------------------------------------------------------
 
@@ -226,10 +253,20 @@ test("duckdb file lists schema-qualified tables and clamps scroll", function()
     reset({ mode = "summarized" })
     M:peek(job(DB))
     assert(last_widget():find("s%.a"), last_widget())
-    state.opts.scrolled_columns = 99
-    M:peek(job(DB, 51))
+    state.opts.scrolled_columns = 6
+    M:peek(job(DB))
     -- 4 metadata fields + widest table (2 columns) - 1
     assert(state.opts.scrolled_columns == 5, state.opts.scrolled_columns)
+    -- One step past the end must still show the last column, not an empty table.
+    local w = last_widget()
+    assert(w:find("│ y") and not w:find("0 rows"), w)
+end)
+
+test("an empty duckdb file shows no stray NULL line", function()
+    reset({ mode = "summarized" })
+    M:peek(job(EMPTY_DB))
+    local w = last_widget()
+    assert(w:find("table_name") and not w:find("NULL"), w)
 end)
 
 test("preload builds caches that both modes read", function()
@@ -252,11 +289,13 @@ end)
 test("a bad cache keeps the row offset", function()
     reset({ mode = "standard" })
     M:preload(job(FIXTURE))
-    for path in io.popen("ls " .. sh_quote(TMP) .. "/cache-*_standard.parquet"):lines() do
-        write(path, "not parquet")
-    end
+    local caches = cache_files("cache-*_standard.parquet")
+    assert(#caches == 1, "expected one standard cache, found " .. #caches)
+    write(caches[1], "not parquet")
     local j = job(FIXTURE, 52)
     M:peek(j)
+    assert(next(state.bad_cache or {}) ~= nil, "cache not marked bad")
+    assert(#cache_files("cache-*_standard.parquet") == 0, "bad cache not removed")
     assert(j.skip == 2, j.skip)
     assert(last_widget():find("carol") and not last_widget():find("alice"), last_widget())
 end)
@@ -264,8 +303,57 @@ end)
 test("a short preview pane does not mark the cache bad", function()
     reset({ mode = "standard" })
     M:preload(job(FIXTURE))
+    assert(#cache_files("cache-*_standard.parquet") == 1, "preload built no standard cache")
     M:peek(job(FIXTURE, 50, 5))
     assert(next(state.bad_cache or {}) == nil, "cache marked bad")
+    assert(#cache_files("cache-*_standard.parquet") == 1, "cache removed")
+end)
+
+test("summarized peek re-peeks the cache when preload finishes", function()
+    reset({ mode = "summarized" })
+    local j = job(FIXTURE, 52) -- row offset 2: only the "value" column row
+    on_sleep = function(n)
+        if n == 1 then
+            M:preload(job(FIXTURE))
+        end
+    end
+    M:peek(j)
+    assert(sleeps == 1, sleeps)
+    assert(j.skip == 2, "row offset lost: " .. j.skip)
+    local w = last_widget()
+    assert(w:find("value") and not w:find("alice") and not w:find("⏱"), w)
+    assert((state.completed or {})[SUMMARIZED_CACHE] == nil, "completed entry not consumed")
+end)
+
+test("summarized peek keeps waiting while preload runs past 30 s", function()
+    reset({ mode = "summarized" })
+    on_sleep = function(n)
+        if n == 1 then
+            -- Preload has started: its cache is listed as preloading.
+            state.preloading = { [SUMMARIZED_CACHE] = true }
+        elseif n == 200 then
+            state.preloading = nil
+            M:preload(job(FIXTURE))
+        end
+    end
+    M:peek(job(FIXTURE))
+    assert(sleeps == 200, sleeps)
+    assert(not last_widget():find("⏱"), last_widget())
+end)
+
+test("column scroll keys keep the row offset and skip a fresh-hover reset", function()
+    reset({ mode = "standard" })
+    cx.active.preview.skip = 0 -- fresh hover
+    M:entry({ args = { "+1" } })
+    assert(state.opts.scrolled_columns == 1, state.opts.scrolled_columns)
+    local peek = events[#events]
+    assert(peek.cmd == "peek" and peek.args[1] == 50 and peek.args.force, "peek must use skip 50 with force")
+    cx.active.preview.skip = 53
+    M:entry({ args = { "-1" } })
+    assert(state.opts.scrolled_columns == 0, state.opts.scrolled_columns)
+    assert(events[#events].args[1] == 53, events[#events].args[1])
+    M:entry({ args = { "-1" } })
+    assert(state.opts.scrolled_columns == 0, "scroll went below 0")
 end)
 
 test("a tabular .txt file is sniffed once", function()
@@ -283,6 +371,30 @@ test("plain text falls back to the code previewer", function()
     assert(code_peeks == 1 and #widgets == 0)
 end)
 
+test("a failed plain-text check is retried", function()
+    reset({ mode = "standard", cache_enabled = false })
+    local real = Cmd.wait_with_output
+    Cmd.wait_with_output = function()
+        return nil
+    end
+    local ok, err = pcall(M.peek, M, job(PLAIN_TXT))
+    Cmd.wait_with_output = real
+    assert(ok, err)
+    M:peek(job(PLAIN_TXT))
+    assert(code_peeks >= 1 and #widgets == 0, "plain text rendered as a table after one failed check")
+end)
+
+test("a .txt file inside the Yazi cache directory does not crash", function()
+    reset({ mode = "standard", cache_enabled = false })
+    local real = ya.file_cache
+    ya.file_cache = function()
+        return nil
+    end
+    local ok, err = pcall(M.peek, M, job(TABLE_TXT))
+    ya.file_cache = real
+    assert(ok, err)
+end)
+
 test("open hides Yazi while DuckDB runs", function()
     reset({})
     cx.active.current.hovered = { url = FIXTURE }
@@ -293,12 +405,16 @@ test("open hides Yazi while DuckDB runs", function()
     end
     assert(table.concat(names, ",") == "hide,spawn,drop", table.concat(names, ","))
     -- "-c" would run the query and exit; "-cmd" runs it and then reads stdin.
-    assert(table.concat(events[2].args, " "):find('^%-cmd CREATE TABLE "sample" AS FROM'), table.concat(events[2].args, " "))
+    local args = table.concat(events[2].args, " ")
+    assert(args:find('^%-cmd CREATE TABLE "sample" AS FROM'), args)
+    -- DuckDB needs the terminal for all three streams, or it exits at once.
+    local cmd = events[2].cmd_object
+    assert(cmd.stdin_mode == Command.INHERIT, "stdin not inherited")
+    assert(cmd.stdout_mode == Command.INHERIT and cmd.stderr_mode == Command.INHERIT, "output not inherited")
 end)
 
-os.execute("rm -rf " .. sh_quote(TMP))
 if failures > 0 then
     print(failures .. " failed")
-    os.exit(1)
+    os.exit(1, true)
 end
 print("All peek tests passed")
