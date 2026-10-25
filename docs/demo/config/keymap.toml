@@ -1,0 +1,9 @@
+[[mgr.prepend_keymap]]
+on = "H"
+run = "plugin duckdb -- -1"
+desc = "DuckDB: scroll one column left"
+
+[[mgr.prepend_keymap]]
+on = "L"
+run = "plugin duckdb -- +1"
+desc = "DuckDB: scroll one column right"
