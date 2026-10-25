@@ -3,6 +3,22 @@
 This project uses [Semantic Versioning](https://semver.org/). A change to the minimum
 DuckDB or Yazi version is a breaking change.
 
+## [2.0.1] - 2026-10-25
+
+The plugin code did not change.
+
+### Changed
+
+- Rewrote the README. It now has a recorded demo GIF in place of the MP4 embeds that did
+  not play on GitHub.
+- Rewrote `SECURITY.md`. The extension host is `extensions.duckdb.org`.
+- The bug report template asks for current Yazi and DuckDB versions.
+
+### Added
+
+- `scripts/record-demo.sh` and `docs/demo/`, which generate the sample data and record
+  `docs/demo.gif` with VHS.
+
 ## [2.0.0] - 2026-10-23
 
 ### Breaking
@@ -76,5 +92,6 @@ First tagged release.
   caches are rebuilt.
 - Parquet placeholder summary keeps a stable column order on DuckDB 2.0.
 
+[2.0.1]: https://github.com/stevencarpenter/duckdb.yazi/releases/tag/v2.0.1
 [2.0.0]: https://github.com/stevencarpenter/duckdb.yazi/releases/tag/v2.0.0
 [1.0.0]: https://github.com/stevencarpenter/duckdb.yazi/releases/tag/v1.0.0
