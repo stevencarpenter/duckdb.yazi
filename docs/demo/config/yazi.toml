@@ -1,0 +1,18 @@
+# scripts/record-demo.sh appends [preview] cache_dir, so the recording does not use your Yazi cache.
+[mgr]
+ratio = [1, 2, 6]
+
+[plugin]
+prepend_previewers = [
+    { url = "*.csv", run = "duckdb" },
+    { url = "*.json", run = "duckdb" },
+    { url = "*.parquet", run = "duckdb" },
+    { url = "*.avro", run = "duckdb" },
+    { url = "*.duckdb", run = "duckdb" },
+]
+prepend_preloaders = [
+    { url = "*.csv", run = "duckdb", multi = false },
+    { url = "*.json", run = "duckdb", multi = false },
+    { url = "*.parquet", run = "duckdb", multi = false },
+    { url = "*.avro", run = "duckdb", multi = false },
+]
