@@ -24,7 +24,7 @@ body:
     id: yazi_version
     attributes:
       label: What version of yazi are you using?
-      placeholder: "ex: 25.5.31"
+      placeholder: "ex: 26.9.1"
     validations:
       required: true
   - type: input

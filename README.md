@@ -37,7 +37,7 @@ The plugin detects the file type from the extension only. A file with an unknown
 
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
-| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.5.28 | 25.5.31 or later (includes fixes in transitive dependencies) |
+| [Yazi](https://yazi-rs.github.io/docs/installation) | 25.12.29 | Latest release |
 | [DuckDB CLI](https://duckdb.org/docs/installation/) | 1.5.0 | Latest 1.5.x or 2.x. CI tests 1.5.0, 1.5.6 and 2.0.0 |
 
 DuckDB 1.5.0 includes the fix for [CVE-2025-64429](https://github.com/duckdb/duckdb/security/advisories/GHSA-vmp8-hg63-v2hp) and the `lambda` syntax the plugin uses.
@@ -240,9 +240,10 @@ Remaining risks:
 
 [CHANGELOG.md](CHANGELOG.md) lists all changes. Releases that need action:
 
+- **3.0.0**: requires Yazi 25.12.29 or later. Yazi 25.12.29 renamed the rule key from `name` to `url`, and step 3 uses `url`. Upgrade Yazi before you run `ya pkg upgrade`.
 - **2.0.0**: requires Yazi 25.5.28 or later. Upgrade Yazi before you run `ya pkg upgrade`.
 - **1.0.0**: requires DuckDB CLI 1.5.0 or later. Upgrade DuckDB before you run `ya pkg upgrade`.
-- **Before 1.0.0**: previewer and preloader rules use `url` instead of `name`. Update the rules in `yazi.toml` to match [step 3](#installation).
+- **Before 1.0.0**: the docs used `name` in previewer and preloader rules. Change `name` to `url`. Update the rules in `yazi.toml` to match [step 3](#installation).
 
 ## Development
 
