@@ -1,6 +1,6 @@
---- @since 25.5.28
+--- @since 25.12.29
 -- DuckDB Plugin for Yazi
--- Requires DuckDB CLI >= 1.5.0 (1.5.x or 2.x) and Yazi >= 25.5.28 (Yazi >= 25.5.31 recommended).
+-- Requires DuckDB CLI >= 1.5.0 (1.5.x or 2.x) and Yazi >= 25.12.29.
 local M = {}
 
 -- Preview skip is stored as row offset + OFFSET_BASE, so a scroll above row 0 can toggle the mode.
@@ -215,8 +215,8 @@ local function duckdb_opener(arg)
         table.insert(args, "-ui")
     end
 
-    -- Give the terminal to DuckDB until it exits. Yazi < 25.12.29 names this ya.hide.
-    local permit = (ui.hide or ya.hide)()
+    -- Give the terminal to DuckDB until it exits.
+    local permit = ui.hide()
     local child, err = command_with_args("duckdb", args):stdin(Command.INHERIT):stdout(Command.INHERIT)
         :stderr(Command.INHERIT):spawn()
     if child then
@@ -352,6 +352,11 @@ FROM %s
         table.concat(stats, ",\n"),
         target
     )
+end
+
+-- Yazi after 26.9.1 deprecates fs.cha() in favor of fs.stat(), and fs.remove() V1 in favor of fs.remove_file().
+local function file_exists(url)
+    return (fs.stat or fs.cha)(url)
 end
 
 -- Get preview cache path
@@ -725,7 +730,7 @@ local function prepare_peek_context(job)
     local cache_enabled = get_opts("cache_enabled")
     local use_cache = cache_enabled
         and cache_url
-        and fs.cha(cache_url)
+        and file_exists(cache_url)
         and not is_on_list("preloading", cache_str)
         and not is_on_list("bad_cache", cache_str)
 
@@ -751,8 +756,13 @@ local function prepare_peek_context(job)
 end
 
 local function remove_file(cache_url)
-    if fs.cha(cache_url) then
-        local ok, err = fs.remove("file", cache_url)
+    if file_exists(cache_url) then
+        local ok, err
+        if fs.remove_file then
+            ok, err = fs.remove_file(cache_url)
+        else
+            ok, err = fs.remove("file", cache_url)
+        end
         if not ok then
             ya.err(
                 string.format("[duckdb] failed to remove partial cache at %s: %s", tostring(cache_url), tostring(err))
@@ -776,7 +786,7 @@ local function create_cache(job, mode, file_type, limit)
     end
 
     local cache_str, cache_url = get_cache_path(job, mode)
-    if not cache_url or fs.cha(cache_url) or is_on_list("bad_cache", cache_str) then
+    if not cache_url or file_exists(cache_url) or is_on_list("bad_cache", cache_str) then
         return true
     end
 

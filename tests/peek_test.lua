@@ -413,6 +413,25 @@ test("open hides Yazi while DuckDB runs", function()
     assert(cmd.stdout_mode == Command.INHERIT and cmd.stderr_mode == Command.INHERIT, "output not inherited")
 end)
 
+test("Yazi after 26.9.1: fs.stat and fs.remove_file replace fs.cha and fs.remove", function()
+    local old = fs
+    local fail = function()
+        error("deprecated fs API called")
+    end
+    fs = { stat = old.cha, remove_file = function(u) return old.remove("file", u) end, cha = fail, remove = fail }
+    local ok, err = pcall(function()
+        reset({ mode = "standard" })
+        M:preload(job(FIXTURE))
+        local caches = cache_files("cache-*_standard.parquet")
+        assert(#caches == 1, "expected one standard cache, found " .. #caches)
+        write(caches[1], "not parquet")
+        M:peek(job(FIXTURE, 52))
+        assert(#cache_files("cache-*_standard.parquet") == 0, "bad cache not removed")
+    end)
+    fs = old
+    assert(ok, err)
+end)
+
 if failures > 0 then
     print(failures .. " failed")
     os.exit(1, true)

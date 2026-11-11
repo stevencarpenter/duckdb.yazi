@@ -3,6 +3,20 @@
 This project uses [Semantic Versioning](https://semver.org/). A change to the minimum
 DuckDB or Yazi version is a breaking change.
 
+## [Unreleased]
+
+### Breaking
+
+- Require Yazi 25.12.29 or later. Yazi 25.12.29 renamed the previewer and preloader rule key
+  from `name` to `url`, and the README rules use `url`. On Yazi 25.5.28 to 25.5.31, those
+  rules did not match.
+
+### Changed
+
+- Use `fs.stat()` and `fs.remove_file()` when Yazi has them. Yazi after 26.9.1 deprecates
+  `fs.cha()` and `fs.remove()` V1. Older Yazi versions keep using `fs.cha()` and `fs.remove()`.
+- Removed the `ya.hide` fallback. Yazi 25.12.29 and later have `ui.hide`.
+
 ## [2.0.1] - 2026-10-25
 
 The plugin code did not change.
